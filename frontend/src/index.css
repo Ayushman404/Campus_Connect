@@ -1,0 +1,5 @@
+@import "tailwindcss";
+
+.smooth-marker {
+  transition: transform 2s linear !important;
+}

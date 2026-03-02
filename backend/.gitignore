@@ -1,0 +1,30 @@
+# Dependencies
+node_modules/
+/jspm_packages/
+/.npm
+
+# Optional npm cache files
+.npm/
+
+# Logs and databases
+npm-debug.log*
+*.log
+*.sqlite
+*.sqlite-journal
+
+# Environment variables
+.env
+.env.test
+
+# TypeScript cache files
+*.tsbuildinfo
+
+# Compiled files
+/build/
+/dist/
+/coverage/
+
+# Editor/OS specific files (optional)
+.DS_Store # macOS
+Thumbs.db # Windows
+.vscode/ # VS Code configuration

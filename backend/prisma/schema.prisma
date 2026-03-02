@@ -1,0 +1,87 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+//   url      = env("DATABASE_URL")
+}
+
+// Enums make the code cleaner and prevent typos in roles
+enum Role {
+  STUDENT
+  DRIVER
+  ADMIN
+}
+
+enum AuthProvider {
+  LOCAL
+  MICROSOFT
+  GOOGLE
+}
+
+model User {
+  id            Int       @id @default(autoincrement())
+  email         String       @unique
+  password      String?      // Optional because OAuth users don't have passwords
+  name          String?
+  role          Role         @default(STUDENT)
+  
+  // Future-proofing for Microsoft/Google Auth
+  provider      AuthProvider @default(LOCAL)
+  externalId    String?      @unique // This stores the Microsoft/Google unique ID
+  
+  // Relations (Marketplace)
+  products      Product[]
+  
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+}
+
+model Bus {
+  id              Int        @id @default(autoincrement())
+  busNumber       String     @unique
+  status          String     @default("INACTIVE") // ACTIVE, INACTIVE, MAINTENANCE
+  lat             Float?
+  lng             Float?
+  currentDriverId Int?       @unique
+  lastUpdated     DateTime   @updatedAt
+  
+  // A bus can have multiple scheduled runs
+  schedules       Schedule[] 
+}
+
+model BusStop {
+  id          Int        @id @default(autoincrement())
+  name        String     @unique
+  lat         Float
+  lng         Float
+  
+  // Relations: A stop can be a starting point or a destination
+  departures  Schedule[] @relation("SourceStop")
+  arrivals    Schedule[] @relation("DestStop")
+}
+
+model Schedule {
+  id            Int      @id @default(autoincrement())
+  departureTime String   // Format: "HH:MM" (e.g., "08:30", "14:15")
+  
+  // Relations
+  busId         Int
+  bus           Bus      @relation(fields: [busId], references: [id])
+  
+  sourceId      Int
+  source        BusStop  @relation("SourceStop", fields: [sourceId], references: [id])
+  
+  destId        Int
+  dest          BusStop  @relation("DestStop", fields: [destId], references: [id])
+}
+
+
+// Marketplace placeholder for now so relations don't break
+model Product {
+  id        Int   @id @default(autoincrement())
+  title     String
+  seller    User     @relation(fields: [sellerId], references: [id])
+  sellerId  Int
+}

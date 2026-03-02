@@ -1,0 +1,48 @@
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: campus_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "5432:5432" # Allows you to use DB tools on your host machine
+    volumes:
+      - campus_db_data:/var/lib/postgresql/data
+    networks:
+      - campus-net
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: campus_backend
+    restart: unless-stopped
+    # MAP PORTS: 5000 for API, 5555 for Prisma Studio
+    ports:
+      - "5000:5000"
+      - "5555:5555"
+    # VOLUMES: This is the "Magic" for auto-updating code
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - JWT_SECRET=${JWT_SECRET}
+      - PORT=${PORT}
+      - CHOKIDAR_USEPOLLING=true
+    depends_on:
+      - db
+    networks:
+      - campus-net
+
+volumes:
+  campus_db_data:
+
+networks:
+  campus-net:
