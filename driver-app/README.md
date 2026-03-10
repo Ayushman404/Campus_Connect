@@ -1,50 +1,135 @@
-# Welcome to your Expo app 👋
+# Driver App (Expo)
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+This is the **driver mobile application** for the Campus Connect project.
+It sends the driver's **live GPS location** to the backend using **Socket.IO**.
 
-## Get started
 
-1. Install dependencies
 
-   ```bash
-   npm install
-   ```
+---
 
-2. Start the app
+## Requirements
 
-   ```bash
-   npx expo start
-   ```
+* Node.js
+* Expo Go app (Android / iOS)
+* Backend server running locally
 
-In the output, you'll find options to open the app in a
+---
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+## Setup
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+### 1. Install dependencies
 
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
+```
+cd driver-app
+npm install
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+### 2. Update backend IP address
 
-## Learn more
+Open:
 
-To learn more about developing your project with Expo, look at the following resources:
+```
+driver-app/app/(tabs)/index.tsx
+```
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+Update this line with your **local machine IP**:
 
-## Join the community
+```
+const socket = io("http://YOUR_IP:5000")
+```
 
-Join our community of developers creating universal apps.
+Example:
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+```
+const socket = io("http://192.168.1.20:5000")
+```
+
+Find your IP with:
+
+```
+ipconfig
+```
+
+Look for **IPv4 Address**.
+
+---
+
+### 3. Start the Expo server
+
+```
+npx expo start --lan
+```
+
+Scan the QR code with **Expo Go** on your phone.
+
+---
+
+## Backend Integration
+
+The app sends location updates using the following socket event:
+
+```
+driverLocationUpdate
+```
+
+Payload format:
+
+```
+{
+  busId: "IITP-BUS-01",
+  lat: number,
+  lng: number,
+  timestamp: string
+}
+```
+
+The backend must listen for:
+
+```
+socket.on("driverLocationUpdate", ...)
+```
+
+---
+
+## How it works
+
+```
+Phone GPS
+   ↓
+Expo Location API
+   ↓
+Socket.IO emit
+   ↓
+Backend server
+   ↓
+Database
+   ↓
+Frontend map
+```
+
+---
+
+## Testing
+
+1. Start backend:
+
+```
+docker compose up
+```
+
+2. Start frontend:
+
+```
+cd frontend
+npm run dev
+```
+
+3. Run driver app and scan QR.
+
+You should see backend logs like:
+
+```
+Persisted IITP-BUS-01 to DB
+```
+
+indicating successful location updates.
