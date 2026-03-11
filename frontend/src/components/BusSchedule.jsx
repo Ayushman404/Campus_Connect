@@ -1,76 +1,54 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 
-const BusSchedule = ({ onRouteSelect }) => {
-  const [schedules, setSchedules] = useState([]);
-  const [loading, setLoading] = useState(true);
-  
-  // Hardcoded for testing the single bus view
-  const activeTab = 'INSTI-BUS-01';
-  const driver = { name: 'Abhav Arora (Driver)', phone: '+91 96967XXXXX', rating: '⭐ 2.3' };
-  useEffect(() => {
-    fetch('http://localhost:5000/api/buses/schedules')
-      .then(res => res.json())
-      .then(data => setSchedules(data))
-      .finally(() => setLoading(false));
-  }, []);
+// MAIN FIX: Changed prop from { onRouteSelect } to { onBusSelect }
+const BusSchedule = ({ onBusSelect }) => {
+  const activeBuses = [
+    { id: 'BUS-01', nextSource: 'Aryabhatta', nextDest: 'TUT Block', time: '09:00 AM', status: 'Live' },
+    { id: 'BUS-02', nextSource: 'Aryabhatta', nextDest: 'D Quarters', time: '09:15 AM', status: 'Departing' },
+    { id: 'BUS-03', nextSource: 'IIT Patna', nextDest: 'Patna Junction', time: '10:00 AM', status: 'Scheduled' },
+    { id: 'BUS-04', nextSource: 'Asima', nextDest: 'TUT Block', time: '09:10 AM', status: 'Live' },
+    { id: 'BUS-05', nextSource: 'TUT Block', nextDest: 'Aryabhatta', time: '09:30 AM', status: 'Scheduled' },
+  ];
 
   return (
-    <div className="flex flex-col h-[80vh] gap-6">
+    <div className="flex flex-col h-full w-full">
+      {/* Mobile Drag Handle */}
+      <div className="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-3 md:hidden shrink-0" />
       
-      {/* 1. Neomorphic Bus Selector Tab */}
-      <div className="bg-[#f0f4f8] p-2 rounded-2xl shadow-[inset_4px_4px_8px_#d1d9e6,inset_-4px_-4px_8px_#ffffff] flex gap-2">
-        <button className="flex-1 bg-white shadow-[4px_4px_10px_#d1d9e6,-4px_-4px_10px_#ffffff] text-blue-600 font-bold py-3 rounded-xl transition-all">
-          {activeTab}
-        </button>
-        <button className="flex-1 text-slate-400 font-semibold py-3 rounded-xl hover:bg-slate-200/50 transition-all">
-          BUS-02
-        </button>
+      <div className="flex justify-between items-center mb-3 shrink-0 px-1">
+        <h2 className="text-base md:text-lg font-black text-slate-800">Active Routes</h2>
+        <span className="text-[10px] bg-green-100 text-green-700 font-bold px-2 py-1 rounded-md">5 Buses Running</span>
       </div>
 
-      {/* 2. Driver Info Card (Skeuomorphic touches) */}
-      <div className="bg-white rounded-3xl p-5 shadow-[8px_8px_16px_#d1d9e6,-8px_-8px_16px_#ffffff] border border-white">
-        <div className="flex items-center gap-4">
-          <div className="w-14 h-14 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center text-white text-xl shadow-inner border-2 border-white">
-            👨🏽‍✈️
-          </div>
-          <div>
-            <h3 className="text-lg font-black text-slate-800">{driver.name}</h3>
-            <p className="text-sm text-slate-500 font-medium">{driver.phone} • {driver.rating}</p>
-          </div>
-        </div>
-      </div>
-
-      {/* 3. Interactive Schedule List */}
-      <div className="flex-1 bg-white rounded-3xl p-5 shadow-[8px_8px_16px_#d1d9e6,-8px_-8px_16px_#ffffff] overflow-y-auto border border-white">
-        <h3 className="font-bold text-slate-800 mb-4 px-1 text-lg">Morning Loop</h3>
-        
-        {loading ? (
-          <p className="text-slate-400 text-center mt-10 animate-pulse">Loading schedule...</p>
-        ) : (
-          <div className="space-y-4">
-            {schedules.map((sched) => (
-              <div 
-                key={sched.id} 
-                onClick={() => onRouteSelect(sched)}
-                className="group cursor-pointer p-4 rounded-2xl border-2 border-transparent hover:border-blue-100 hover:bg-blue-50/50 hover:shadow-[4px_4px_10px_#d1d9e6,-4px_-4px_10px_#ffffff] transition-all duration-300"
-              >
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-xs font-black tracking-wider text-slate-400 uppercase">Departure</span>
-                  <span className="bg-blue-100 text-blue-700 font-black px-3 py-1 rounded-full text-sm shadow-sm">
-                    {sched.departureTime}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between text-slate-700 font-semibold mt-3">
-                  <span className="w-2/5 truncate">{sched.source.name}</span>
-                  <span className="text-blue-400 group-hover:scale-125 transition-transform">➔</span>
-                  <span className="w-2/5 text-right truncate">{sched.dest.name}</span>
-                </div>
+      <div className="flex-1 flex flex-col justify-between gap-2 overflow-hidden pb-1">
+        {activeBuses.map((bus) => (
+          <div 
+            key={bus.id}
+            // MAIN FIX: We are now passing the whole 'bus' object to App.js on click
+            onClick={() => onBusSelect(bus)}
+            className="flex-1 bg-slate-50 border border-slate-100 rounded-xl p-2 md:p-3 flex flex-col justify-center cursor-pointer hover:bg-blue-50 hover:border-blue-200 active:scale-[0.98] transition-all"
+          >
+            <div className="flex justify-between items-center mb-1 md:mb-2">
+              <div className="flex items-center gap-2">
+                <span className="bg-blue-600 text-white text-[10px] font-black px-2 py-0.5 rounded-md shadow-sm">
+                  {bus.id}
+                </span>
+                <span className={`text-[9px] font-bold uppercase tracking-wider ${bus.status === 'Live' ? 'text-green-500 animate-pulse' : 'text-slate-400'}`}>
+                  {bus.status}
+                </span>
               </div>
-            ))}
+              <span className="text-blue-600 font-black text-xs">{bus.time}</span>
+            </div>
+            
+            <div className="flex items-center justify-between text-slate-700 font-bold text-[11px] sm:text-xs md:text-sm">
+              <span className="truncate w-2/5">{bus.nextSource}</span>
+              <span className="text-blue-300 w-1/5 text-center">➔</span>
+              <span className="truncate w-2/5 text-right">{bus.nextDest}</span>
+            </div>
           </div>
-        )}
+        ))}
       </div>
-
+      
     </div>
   );
 };
