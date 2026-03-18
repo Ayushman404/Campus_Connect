@@ -1,44 +1,46 @@
-import prisma from '../lib/prisma.js';
+import prisma from '../lib/prisma.js'
 
-// 1. Hydration: Get last known locations of active buses
+// Hydration: Called once when the frontend map loads to place all active buses on the map
 export const getLiveBuses = async (req, res) => {
   try {
     const buses = await prisma.bus.findMany({
-      where: { status: 'ACTIVE' },
-      select: { busNumber: true, lat: true, lng: true, lastUpdated: true }
+      where: { status: 'ACTIVE' }, // Only fetch buses currently on the road
+      select: { id: true, busNumber: true, lat: true, lng: true, lastUpdated: true } // id is needed to match incoming socket updates to the right map marker
     });
     res.status(200).json(buses);
-  } catch (error) {
-    console.error(error);
+  } catch (err) {
+    console.error(err);
     res.status(500).json({ message: 'Failed to fetch live buses' });
   }
 };
 
-// 2. Map Data: Get all static bus stops (Red circles on the map)
+// Map Data: Returns all static bus stops to render as markers on the map
+// These are pre-seeded via seed-location.js and don't change at runtime
 export const getStops = async (req, res) => {
   try {
     const stops = await prisma.busStop.findMany();
     res.status(200).json(stops);
-  } catch (error) {
-    console.error(error);
+  } catch (err) {
+    console.error(err);
     res.status(500).json({ message: 'Failed to fetch bus stops' });
   }
 };
 
-// 3. Timetable: Get schedule with actual stop names attached
+// Timetable: Returns the full schedule sorted chronologically
+// Only fetches what the frontend actually needs — busNumber, source name, dest name
 export const getSchedules = async (req, res) => {
   try {
     const schedules = await prisma.schedule.findMany({
       include: {
-        bus: { select: { busNumber: true } },
-        source: { select: { name: true } },
-        dest: { select: { name: true } }
+        bus: { select: { busNumber: true } },        // Just the bus number, not the entire bus object
+        source: { select: { name: true } },          // Just the stop name, not lat/lng etc.
+        dest: { select: { name: true } }             // Same for destination
       },
-      orderBy: { departureTime: 'asc' } // Orders them chronologically
+      orderBy: { departureTime: 'asc' }              // Sorted so frontend doesn't have to
     });
     res.status(200).json(schedules);
-  } catch (error) {
-    console.error(error);
+  } catch (err) {
+    console.error(err);
     res.status(500).json({ message: 'Failed to fetch schedules' });
   }
 };
