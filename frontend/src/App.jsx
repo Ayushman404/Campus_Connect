@@ -1,41 +1,86 @@
-import React, { useState } from 'react';
-import CampusMap from './components/CampusMap';
-import BusSchedule from './components/BusSchedule';
-import BusDetail from './components/BusDetail';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { useContext } from 'react';
+import { AuthContext, AuthProvider } from './context/AuthContext';
+import Navbar from './components/Navbar';
+import Login from './pages/Login';
+import Dashboard from './pages/Dashboard';
+import Marketplace from './pages/Marketplace';
+import Profile from './pages/Profile';
+import Chat from './pages/Chat';
+
+function Layout({ children }) {
+  return (
+    <div className="flex flex-col h-screen w-screen overflow-hidden">
+      <Navbar />
+      <main className="flex-1 overflow-auto bg-slate-50">
+        {children}
+      </main>
+    </div>
+  );
+}
+
+function ProtectedRoute({ children }) {
+  const { user, token, loading } = useContext(AuthContext);
+
+  if (loading) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-slate-900">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-white font-bold tracking-widest uppercase text-xs">Campus Connect</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!token) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return <Layout>{children}</Layout>;
+}
 
 function App() {
-  const [selectedBus, setSelectedBus] = useState(null);
-
   return (
-    <div className="h-screen w-full bg-[#f0f4f8] flex flex-col md:flex-row overflow-hidden font-sans">
-      
-      {/* MAP SECTION: 
-          Mobile: Shifts height based on selection
-          Desktop: Strictly 60% width, 100% height always */}
-      <div className={`transition-all duration-300 relative flex-shrink-0 w-full md:w-[60%] ${selectedBus ? 'h-[40vh] md:h-full' : 'h-[50vh] md:h-full'}`}>
-        <div className="absolute top-4 left-4 z-[400] pointer-events-none">
-          <h1 className="text-2xl md:text-3xl font-black text-slate-800 tracking-tight drop-shadow-md">Campus Connect</h1>
-          <p className="text-[10px] md:text-xs text-slate-600 font-bold uppercase tracking-widest bg-white/80 backdrop-blur-sm px-2 py-0.5 rounded-full w-fit mt-1 shadow-sm">
-            {selectedBus ? `Tracking ${selectedBus.id}` : 'Live Transit'}
-          </p>
-        </div>
-        <CampusMap selectedBus={selectedBus} />
-      </div>
-
-      {/* SCHEDULE/DETAIL PANEL: 
-          Mobile: Takes remaining height 
-          Desktop: Strictly 40% width, full height, nice left-shadow */}
-      <div className={`transition-all duration-300 w-full md:w-[40%] bg-white md:shadow-[-10px_0_30px_rgba(0,0,0,0.08)] shadow-[0_-10px_20px_rgba(0,0,0,0.05)] z-[500] flex flex-col p-4 md:p-8 ${selectedBus ? 'h-[60vh] md:h-full' : 'h-[50vh] md:h-full'} rounded-t-[24px] md:rounded-none`}>
-        
-        {selectedBus ? (
-          <BusDetail bus={selectedBus} onBack={() => setSelectedBus(null)} />
-        ) : (
-          <BusSchedule onBusSelect={setSelectedBus} />
-        )}
-
-      </div>
-      
-    </div>
+    <AuthProvider>
+      <Router>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route 
+            path="/" 
+            element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/marketplace" 
+            element={
+              <ProtectedRoute>
+                <Marketplace />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/profile" 
+            element={
+              <ProtectedRoute>
+                <Profile />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/chat" 
+            element={
+              <ProtectedRoute>
+                <Chat />
+              </ProtectedRoute>
+            } 
+          />
+        </Routes>
+      </Router>
+    </AuthProvider>
   );
 }
 
