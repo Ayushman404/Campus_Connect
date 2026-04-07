@@ -44,6 +44,8 @@ app.get('/status', async (req, res) => {
 const lastDbUpdate = {}; 
 const DB_UPDATE_INTERVAL = 10000; // Save to DB every 10 seconds
 
+const activeBuses = {}; 
+
 io.on('connection', (socket) => {
   console.log('🟢 New connection:', socket.id);
 
@@ -97,6 +99,14 @@ io.on('connection', (socket) => {
   // 3. BUS TRACKING (PRO-BONO LEGACY LOGIC)
   socket.on('driverLocationUpdate', async (data) => {
     // 1. FAST PATH: Broadcast to React UI immediately
+  // Send the newly connected student the last known locations immediately
+  socket.emit('initialBusLocations', activeBuses);
+
+  socket.on('driverLocationUpdate', async (data) => {
+    // Cache the latest location for future connections
+    activeBuses[data.busId] = data;
+
+    // 1. FAST PATH: Broadcast to React UI immediately (2s interval)
     socket.broadcast.emit('busMoved', data);
 
     // 2. SLOW PATH: Database Persistence

@@ -40,6 +40,14 @@ const MapFocusController = ({ selectedBus, activeBuses }) => {
 
 const CampusMap = ({ selectedBus }) => {
   const iitpCenter = [25.5358, 84.8511];
+  
+  // Define bounds to keep the view restricted to the campus area
+  // Roughly: [South-West Lat/Lng, North-East Lat/Lng]
+  const campusBounds = [
+    [25.5250, 81.8350], // Southwest corner
+    [27.5450, 87.9700]  // Northeast corner
+  ];
+
   const [activeBuses, setActiveBuses] = useState({});
 
   useEffect(() => {
@@ -60,7 +68,15 @@ const CampusMap = ({ selectedBus }) => {
 
   return (
     <div className="h-full w-full z-0">
-      <MapContainer center={iitpCenter} zoom={15} zoomControl={false} className="h-full w-full">
+      <MapContainer 
+        center={iitpCenter} 
+        zoom={15} 
+        minZoom={14}               // 1. Prevents zooming out too far
+        maxBounds={campusBounds}    // 2. Prevents panning away from campus
+        maxBoundsViscosity={1.0}    // 3. Makes the boundary "hard" so map bounces back
+        zoomControl={false} 
+        className="h-full w-full"
+      >
         
         {/* Handles the zooming logic */}
         <MapFocusController selectedBus={selectedBus} activeBuses={activeBuses} />
@@ -68,7 +84,6 @@ const CampusMap = ({ selectedBus }) => {
         <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
 
         {Object.entries(activeBuses).map(([busId, coords]) => {
-          // If a bus is selected, make others small dots. If none selected, all are big.
           const isSelected = selectedBus && selectedBus.id === busId;
           const isDimmed = selectedBus && !isSelected;
           
@@ -77,7 +92,7 @@ const CampusMap = ({ selectedBus }) => {
               key={busId} 
               position={coords} 
               icon={isDimmed ? dotIcon : mainBusIcon}
-              zIndexOffset={isSelected ? 1000 : 0} // Bring selected bus to front
+              zIndexOffset={isSelected ? 1000 : 0} 
             >
               {!isDimmed && (
                 <Popup>🚌 {busId} <span className="text-green-500">● Live</span></Popup>
