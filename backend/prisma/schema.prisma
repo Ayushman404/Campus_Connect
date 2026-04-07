@@ -4,10 +4,8 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-//   url      = env("DATABASE_URL")
 }
 
-// Enums make the code cleaner and prevent typos in roles
 enum Role {
   STUDENT
   DRIVER
@@ -20,34 +18,68 @@ enum AuthProvider {
   GOOGLE
 }
 
+enum ListingType {
+  SELL
+  RENT
+}
+
+enum ProductStatus {
+  AVAILABLE
+  OUT_OF_STOCK
+  SOLD_OUT
+  RENTED_OUT
+}
+
+enum InterestStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  COMPLETED
+}
+
+enum NotificationType {
+  CHAT_MESSAGE
+  INTEREST_REQUEST
+  SYSTEM_ALERT
+}
+
 model User {
-  id            Int       @id @default(autoincrement())
-  email         String       @unique
-  password      String?      // Optional because OAuth users don't have passwords
-  name          String?
-  role          Role         @default(STUDENT)
+  id             String       @id @default(uuid())
+  email          String       @unique
+  password       String?      
+  name           String?
+  role           Role         @default(STUDENT)
   
-  // Future-proofing for Microsoft/Google Auth
-  provider      AuthProvider @default(LOCAL)
-  externalId    String?      @unique // This stores the Microsoft/Google unique ID
+  provider       AuthProvider @default(LOCAL)
+  externalId     String?      @unique 
   
-  // Relations (Marketplace)
-  products      Product[]
+  bio            String?
+  profilePicture String?
+  contactNumber  String?
+  isVerified     Boolean    @default(false)
   
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
+  products       Product[]  @relation("UserProducts")
+  interests      Interest[] @relation("UserInterests")
+  
+  // Chat & Notifications
+  conversationsAsBuyer  Conversation[] @relation("BuyerConversations")
+  conversationsAsSeller Conversation[] @relation("SellerConversations")
+  sentMessages          Message[]      @relation("SentMessages")
+  notifications         Notification[] @relation("UserNotifications")
+
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
 }
 
 model Bus {
   id              Int        @id @default(autoincrement())
   busNumber       String     @unique
-  status          String     @default("INACTIVE") // ACTIVE, INACTIVE, MAINTENANCE
+  status          String     @default("INACTIVE")
   lat             Float?
   lng             Float?
-  currentDriverId Int?       @unique
+  currentDriverId String?    @unique
   lastUpdated     DateTime   @updatedAt
   
-  // A bus can have multiple scheduled runs
   schedules       Schedule[] 
 }
 
@@ -57,16 +89,14 @@ model BusStop {
   lat         Float
   lng         Float
   
-  // Relations: A stop can be a starting point or a destination
   departures  Schedule[] @relation("SourceStop")
   arrivals    Schedule[] @relation("DestStop")
 }
 
 model Schedule {
   id            Int      @id @default(autoincrement())
-  departureTime String   // Format: "HH:MM" (e.g., "08:30", "14:15")
+  departureTime String   
   
-  // Relations
   busId         Int
   bus           Bus      @relation(fields: [busId], references: [id])
   
@@ -77,11 +107,87 @@ model Schedule {
   dest          BusStop  @relation("DestStop", fields: [destId], references: [id])
 }
 
-
-// Marketplace placeholder for now so relations don't break
 model Product {
-  id        Int   @id @default(autoincrement())
+  id            String        @id @default(uuid())
+  sellerId      String
+  title         String
+  description   String        @db.Text
+  price         Float
+  listingType   ListingType
+  stockQuantity Int           @default(1)
+  status        ProductStatus @default(AVAILABLE)
+  images        String[]      
+  
+  seller        User          @relation("UserProducts", fields: [sellerId], references: [id], onDelete: Cascade)
+  interests     Interest[]    @relation("ProductInterests")
+  conversations Conversation[]
+
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@index([sellerId])
+  @@index([status, listingType]) 
+}
+
+model Interest {
+  id        String         @id @default(uuid())
+  productId String
+  buyerId   String
+  status    InterestStatus @default(PENDING)
+  message   String?        @db.Text
+  
+  product   Product        @relation("ProductInterests", fields: [productId], references: [id], onDelete: Cascade)
+  buyer     User           @relation("UserInterests", fields: [buyerId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  @@unique([productId, buyerId])
+  @@index([productId])
+  @@index([buyerId])
+}
+
+model Conversation {
+  id        String    @id @default(uuid())
+  productId String
+  buyerId   String
+  sellerId  String
+  
+  product   Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  buyer     User      @relation("BuyerConversations", fields: [buyerId], references: [id], onDelete: Cascade)
+  seller    User      @relation("SellerConversations", fields: [sellerId], references: [id], onDelete: Cascade)
+  
+  messages  Message[]
+  
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@unique([productId, buyerId, sellerId])
+}
+
+model Message {
+  id             String       @id @default(uuid())
+  conversationId String
+  senderId       String
+  text           String       @db.Text
+  isRead         Boolean      @default(false)
+  
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender         User         @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  
+  createdAt      DateTime     @default(now())
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  user      User             @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
+  
+  type      NotificationType
   title     String
-  seller    User     @relation(fields: [sellerId], references: [id])
-  sellerId  Int
+  message   String           @db.Text
+  link      String?          // e.g. /chats/:id or /marketplace/:id
+  isRead    Boolean          @default(false)
+  
+  createdAt DateTime         @default(now())
 }
