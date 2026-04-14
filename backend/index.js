@@ -97,8 +97,6 @@ io.on('connection', (socket) => {
   });
 
   // 3. BUS TRACKING (PRO-BONO LEGACY LOGIC)
-  socket.on('driverLocationUpdate', async (data) => {
-    // 1. FAST PATH: Broadcast to React UI immediately
   // Send the newly connected student the last known locations immediately
   socket.emit('initialBusLocations', activeBuses);
 

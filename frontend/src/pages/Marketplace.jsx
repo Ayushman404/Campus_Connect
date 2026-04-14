@@ -1,28 +1,18 @@
 import { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
-import { PlusCircle, ShoppingBag, IndianRupee, Tag, User as UserIcon, MessageSquare, AlertCircle, Image as ImageIcon } from 'lucide-react';
+import { PlusCircle, ShoppingBag, X } from 'lucide-react';
 import io from 'socket.io-client';
 
 export default function Marketplace() {
   const [products, setProducts] = useState([]);
   const [showAddForm, setShowAddForm] = useState(false);
   const [newItem, setNewItem] = useState({ title: '', price: '', description: '', listingType: 'SELL' });
-  const [imageFile, setImageFile] = useState(null);
-  const [imagePreview, setImagePreview] = useState(null);
+  const [imageFiles, setImageFiles] = useState([]);
+  const [imagePreviews, setImagePreviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const { user, token } = useContext(AuthContext);
-  const navigate = useNavigate();
-  const [socket, setSocket] = useState(null);
 
-  // 1. Initialize Socket for Notifications
-  useEffect(() => {
-    const newSocket = io('http://localhost:5000');
-    setSocket(newSocket);
-    return () => newSocket.close();
-  }, []);
-
-  // 2. FETCH PRODUCTS FROM BACKEND ON LOAD
   useEffect(() => {
     fetchProducts();
   }, []);
@@ -46,26 +36,60 @@ export default function Marketplace() {
   };
 
   const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setImageFile(file);
-      setImagePreview(URL.createObjectURL(file));
+    const files = Array.from(e.target.files);
+    if (files.length + imageFiles.length > 5) {
+      alert("Maximum 5 images allowed per artifact.");
+      return;
     }
+
+    const newFiles = [...imageFiles, ...files];
+    const newPreviews = [...imagePreviews, ...files.map(file => URL.createObjectURL(file))];
+    
+    setImageFiles(newFiles);
+    setImagePreviews(newPreviews);
   };
 
-  // 3. ADD A NEW ITEM TO DATABASE
+  const handleRemoveImage = (index) => {
+    const newFiles = [...imageFiles];
+    const newPreviews = [...imagePreviews];
+    
+    URL.revokeObjectURL(newPreviews[index]);
+    
+    newFiles.splice(index, 1);
+    newPreviews.splice(index, 1);
+    
+    setImageFiles(newFiles);
+    setImagePreviews(newPreviews);
+  };
+
+  const handleMakeThumbnail = (index) => {
+    if (index === 0) return;
+    
+    const newFiles = [...imageFiles];
+    const newPreviews = [...imagePreviews];
+    
+    const [targetFile] = newFiles.splice(index, 1);
+    const [targetPreview] = newPreviews.splice(index, 1);
+    
+    newFiles.unshift(targetFile);
+    newPreviews.unshift(targetPreview);
+    
+    setImageFiles(newFiles);
+    setImagePreviews(newPreviews);
+  };
+
   const handleAddItem = async (e) => {
     e.preventDefault();
     
-    // Use FormData for file upload
     const formData = new FormData();
     formData.append('title', newItem.title);
     formData.append('price', newItem.price);
     formData.append('description', newItem.description);
     formData.append('listingType', newItem.listingType);
-    if (imageFile) {
-      formData.append('image', imageFile);
-    }
+    
+    imageFiles.forEach(file => {
+      formData.append('images', file);
+    });
 
     try {
       const response = await fetch('http://localhost:5000/api/products', {
@@ -79,8 +103,8 @@ export default function Marketplace() {
       if (response.ok) {
         setShowAddForm(false);
         setNewItem({ title: '', price: '', description: '', listingType: 'SELL' });
-        setImageFile(null);
-        setImagePreview(null);
+        setImageFiles([]);
+        setImagePreviews([]);
         fetchProducts();
       } else {
         const errorData = await response.json();
@@ -91,218 +115,261 @@ export default function Marketplace() {
     }
   };
 
-  const handleInterest = async (product) => {
-    try {
-      // 1. Initialize/Fetch Conversation
-      const chatRes = await fetch('http://localhost:5000/api/chats/init', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ 
-          productId: product.id, 
-          sellerId: product.sellerId 
-        })
-      });
-
-      if (chatRes.ok) {
-        const conversation = await chatRes.json();
-        
-        // 2. Send Real-time Notification to Seller
-        if (socket) {
-          socket.emit('sendNotification', {
-            userId: product.sellerId,
-            type: 'INTEREST_REQUEST',
-            title: 'New Interest!',
-            message: `${user.name || 'A student'} is interested in your ${product.title}`,
-            link: `/chat?id=${conversation.id}`
-          });
-        }
-
-        // 3. Redirect Buyer to Chat
-        navigate('/chat');
-      } else {
-        const data = await chatRes.json();
-        alert(data.error);
-      }
-    } catch (error) {
-      console.error("Chat redirection failed", error);
-    }
-  };
-
   return (
-    <div className="flex-1 bg-slate-50 min-h-screen p-4 md:p-8 animate-in fade-in duration-500">
-      <div className="max-w-7xl mx-auto">
+    <div className="relative overflow-hidden pt-6">
+      {/* Background Organic Blobs */}
+      <div className="absolute top-0 right-0 -z-10 w-[600px] h-[600px] bg-primary-fixed/30 organic-blob blur-3xl opacity-40 translate-x-1/4 -translate-y-1/4"></div>
+      <div className="absolute bottom-0 left-0 -z-10 w-[500px] h-[500px] bg-secondary-fixed/30 organic-blob blur-3xl opacity-30 -translate-x-1/4 translate-y-1/4"></div>
+      
+      {/* Hero Section */}
+      <section className="px-6 md:px-16 pt-16 pb-24 md:pb-32 max-w-[1920px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-end">
+        <div className="lg:col-span-8 relative z-10">
+          <span className="inline-block px-4 py-1 mb-6 text-[10px] tracking-[0.2em] font-bold uppercase bg-primary text-on-primary rounded-full">
+            Established 2024
+          </span>
+          <h1 className="text-6xl md:text-8xl lg:text-9xl font-black tracking-tighter leading-[0.85] text-on-surface uppercase mb-8">
+            The Modern<br/>
+            <span className="text-primary">Campus</span><br/>
+            Artifacts.
+          </h1>
+          <p className="text-lg md:text-xl font-medium max-w-xl text-on-surface-variant leading-relaxed">
+            A curated marketplace for the avant-garde student. High-fidelity electronics, rare journals, and tactile living essentials designed for the scholarly life.
+          </p>
+        </div>
         
-        {/* HEADER SECTION */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between mb-10 gap-4">
-          <div>
-            <h2 className="text-3xl font-black text-slate-800 tracking-tight">IITP Marketplace</h2>
-            <p className="text-slate-500 font-semibold mt-1 flex items-center gap-2">
-               <ShoppingBag className="w-4 h-4 text-blue-600" />
-               Current active listings available for you
-            </p>
+        <div className="lg:col-span-4 flex flex-col gap-6 relative z-10">
+          <div className="h-64 bg-surface-container-highest overflow-hidden relative group rounded-xl">
+            <img 
+              className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-700" 
+              alt="featured" 
+              src="https://images.unsplash.com/photo-1542204165-65bf26472b9b?q=80&w=1000&auto=format&fit=crop"
+            />
+            <div className="absolute bottom-4 left-4 text-xs font-bold tracking-widest uppercase bg-surface px-3 py-1 text-on-surface">
+              Featured: Equipment
+            </div>
           </div>
-          <div className="flex items-center gap-3">
-             <Link 
-               to="/profile" 
-               className="hidden sm:flex items-center gap-2 px-6 py-3 rounded-2xl font-bold bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 transition-all shadow-sm"
-             >
-               <UserIcon className="w-5 h-5 text-slate-400" />
-               Manage My Listings
-             </Link>
-             <button 
-               onClick={() => setShowAddForm(!showAddForm)} 
-               className={`flex items-center gap-2 px-6 py-3 rounded-2xl font-bold transition-all shadow-lg active:scale-95 ${
-                 showAddForm ? 'bg-slate-800 text-white' : 'bg-blue-600 text-white hover:bg-blue-500 shadow-blue-200'
-               }`}
-             >
-               {showAddForm ? 'Close Form' : <><PlusCircle className="w-5 h-5" /> Post New Item</>}
-             </button>
+          <div className="flex gap-4">
+            <button 
+              onClick={() => setShowAddForm(true)} 
+              className="flex-1 py-4 bg-primary text-on-primary font-bold uppercase text-xs tracking-widest active:scale-95 transition-transform hover:bg-[#842500]"
+            >
+              List an Object
+            </button>
+            <button className="w-16 h-14 flex items-center justify-center bg-surface-container-highest active:scale-95 transition-transform text-on-surface hover:bg-surface-variant">
+              <span className="material-symbols-outlined">arrow_downward</span>
+            </button>
           </div>
         </div>
+      </section>
 
-        {/* POST FORM */}
-        {showAddForm && (
-          <div className="bg-white p-8 rounded-[2rem] shadow-2xl shadow-slate-200/50 mb-12 border border-slate-100 animate-in slide-in-from-top-4 duration-300">
-            <h3 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2 underline decoration-blue-500 decoration-4 underline-offset-8">Create New Listing</h3>
-            <form onSubmit={handleAddItem} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <div className="lg:col-span-2 space-y-2">
-                <label className="text-xs font-bold text-slate-400 uppercase ml-1">What are you listing?</label>
-                <input type="text" placeholder="e.g. Scientific Calculator" required className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 text-sm font-semibold outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all"
-                  value={newItem.title} onChange={(e) => setNewItem({...newItem, title: e.target.value})} />
-              </div>
-              
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-slate-400 uppercase ml-1">Price (₹)</label>
-                <input type="number" placeholder="500" required className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 text-sm font-bold outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all"
-                  value={newItem.price} onChange={(e) => setNewItem({...newItem, price: e.target.value})} />
-              </div>
-              
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-slate-400 uppercase ml-1">Type</label>
-                <select className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 text-sm font-bold outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all appearance-none" value={newItem.listingType} onChange={(e) => setNewItem({...newItem, listingType: e.target.value})}>
-                  <option value="SELL">Sell Forever</option>
-                  <option value="RENT">Rent for Now</option>
-                </select>
-              </div>
-
-              <div className="lg:col-span-2 space-y-2">
-                <label className="text-xs font-bold text-slate-400 uppercase ml-1">Upload Photo</label>
-                <div className="relative group/file">
-                  <div className="flex items-center justify-center w-full min-h-[140px] border-2 border-dashed border-slate-200 rounded-3xl bg-slate-50 hover:bg-slate-100 hover:border-blue-300 transition-all cursor-pointer relative overflow-hidden">
-                    {imagePreview ? (
-                      <>
-                        <img src={imagePreview} className="absolute inset-0 w-full h-full object-cover" alt="Preview" />
-                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/file:opacity-100 transition-opacity flex items-center justify-center">
-                          <p className="text-white text-xs font-bold uppercase tracking-widest">Change Image</p>
-                        </div>
-                      </>
+      {/* Product Grid Section */}
+      <section className="px-6 md:px-16 py-24 bg-surface-container-low rounded-t-[3rem]">
+        <div className="max-w-[1920px] mx-auto">
+          <div className="flex justify-between items-baseline mb-16 border-b-2 border-on-surface/5 pb-4">
+            <h2 className="text-3xl md:text-5xl font-black tracking-tighter uppercase text-on-surface">Fresh Arrivals</h2>
+            <Link to="/profile" className="text-xs font-bold uppercase tracking-widest text-primary border-b border-primary hover:text-on-surface hover:border-on-surface transition-colors">
+              Manage Your Items
+            </Link>
+          </div>
+          
+          {loading ? (
+             <div className="flex flex-col items-center justify-center py-32 grayscale opacity-50">
+                <ShoppingBag className="w-16 h-16 animate-bounce text-on-surface-variant mb-4" />
+                <p className="text-on-surface-variant font-bold uppercase tracking-widest text-xs">Syncing Archives...</p>
+             </div>
+          ) : products.length === 0 ? (
+             <div className="flex flex-col items-center justify-center py-32 text-center">
+                <div className="w-24 h-24 bg-surface-variant rounded-full flex items-center justify-center border-4 border-surface-container mb-6">
+                  <span className="material-symbols-outlined text-4xl text-on-surface/40">inventory_2</span>
+                </div>
+                <h3 className="text-3xl font-black uppercase text-on-surface mb-4 tracking-tighter">No Artifacts Found</h3>
+                <p className="text-on-surface-variant font-medium max-w-md mx-auto leading-relaxed mb-8">
+                  The archives are currently empty. Check back later or be the first to list a valuable item.
+                </p>
+                <button 
+                  onClick={() => setShowAddForm(true)}
+                  className="bg-on-surface text-surface px-8 py-4 font-bold uppercase text-xs tracking-widest hover:bg-secondary transition-colors"
+                >
+                  List First Item
+                </button>
+             </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-16">
+              {products.map((product, idx) => (
+                <div key={product.id} className={`group ${idx % 4 >= 2 ? 'lg:translate-y-12' : ''}`}>
+                  <Link to={`/product/${product.id}`} className="block relative aspect-[4/5] bg-surface-container-lowest mb-6 overflow-hidden rounded-xl">
+                    <div className="absolute top-4 left-4 z-10 flex gap-2">
+                       <span className={`text-on-primary text-[10px] font-black uppercase px-2 py-1 tracking-tighter shadow-md ${product.listingType === 'SELL' ? 'bg-primary' : 'bg-secondary'}`}>
+                         {product.listingType === 'SELL' ? 'Buy' : 'Rent'}
+                       </span>
+                    </div>
+                    {product.images && product.images.length > 0 ? (
+                      <img 
+                        src={product.images[0].startsWith('http') ? product.images[0] : `http://localhost:5000${product.images[0]}`} 
+                        alt={product.title} 
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" 
+                      />
                     ) : (
-                      <div className="flex flex-col items-center gap-2 p-4">
-                        <PlusCircle className="w-8 h-8 text-slate-400" />
-                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Select Image File</span>
-                        <span className="text-[10px] text-slate-400">JPG, PNG, WEBP up to 5MB</span>
+                      <div className="w-full h-full bg-surface-variant flex items-center justify-center text-on-surface-variant/40 group-hover:scale-105 transition-transform duration-700">
+                         <span className="material-symbols-outlined text-6xl">image_not_supported</span>
                       </div>
                     )}
+                  </Link>
+                  <div className="flex justify-between items-start gap-4">
+                    <div className="flex-1">
+                      <p className="text-[10px] uppercase font-bold tracking-widest text-on-surface-variant opacity-60 mb-1">
+                        From {product.seller?.name || 'Student'}
+                      </p>
+                      <Link to={`/product/${product.id}`}>
+                        <h3 className="text-lg font-bold tracking-tight uppercase leading-none mb-2 text-on-surface hover:text-primary transition-colors">
+                          {product.title}
+                        </h3>
+                      </Link>
+                      <p className="text-sm text-on-surface-variant line-clamp-1 font-medium">{product.description}</p>
+                    </div>
+                    <p className="font-black text-primary text-lg">₹{product.price}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* Add Item Modal */}
+      {showAddForm && (
+        <div className="fixed inset-0 z-[60] bg-on-background/40 backdrop-blur-sm flex justify-center items-center p-4">
+          <div className="bg-surface w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+             <div className="flex justify-between items-center p-6 border-b border-on-surface/5 bg-surface-bright">
+               <h3 className="text-2xl font-black uppercase tracking-tighter text-on-surface">List an Artifact</h3>
+               <button onClick={() => setShowAddForm(false)} className="p-2 hover:bg-surface-variant rounded-full transition-colors text-on-surface">
+                 <X className="w-6 h-6" />
+               </button>
+             </div>
+             
+             <form onSubmit={handleAddItem} className="p-6 md:p-8 flex flex-col gap-6 max-h-[80vh] overflow-y-auto">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2 md:col-span-2">
+                    <label className="text-xs font-black text-on-surface-variant uppercase tracking-widest">Headline Title</label>
                     <input 
-                      type="file" 
-                      accept="image/*"
-                      onChange={handleFileChange}
-                      className="absolute inset-0 opacity-0 cursor-pointer"
+                      type="text" 
+                      required 
+                      autoFocus
+                      placeholder="e.g. Vintage Task Light / Textbook" 
+                      className="w-full bg-surface-container border-none rounded-xl p-4 text-on-surface placeholder:text-on-surface/30 focus:ring-2 focus:ring-primary outline-none font-bold"
+                      value={newItem.title} 
+                      onChange={(e) => setNewItem({...newItem, title: e.target.value})} 
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label className="text-xs font-black text-on-surface-variant uppercase tracking-widest">Pricing (₹)</label>
+                    <input 
+                      type="number" 
+                      required 
+                      placeholder="e.g. 500" 
+                      className="w-full bg-surface-container border-none rounded-xl p-4 text-on-surface placeholder:text-on-surface/30 focus:ring-2 focus:ring-primary outline-none font-bold appearance-none"
+                      value={newItem.price} 
+                      onChange={(e) => setNewItem({...newItem, price: e.target.value})} 
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label className="text-xs font-black text-on-surface-variant uppercase tracking-widest">Transaction Method</label>
+                    <select 
+                      className="w-full bg-surface-container border-none rounded-xl p-4 text-on-surface focus:ring-2 focus:ring-primary outline-none font-bold block appearance-none"
+                      value={newItem.listingType} 
+                      onChange={(e) => setNewItem({...newItem, listingType: e.target.value})}
+                    >
+                      <option value="SELL">Purchase Outright</option>
+                      <option value="RENT">Rental Agreement</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-4 md:col-span-2">
+                    <div className="flex justify-between items-center">
+                      <label className="text-xs font-black text-on-surface-variant uppercase tracking-widest">Photographic Evidence</label>
+                      <span className="text-[10px] font-bold text-primary uppercase tracking-widest">{imageFiles.length}/5 Images</span>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                      {imagePreviews.map((preview, index) => (
+                        <div key={index} className="relative aspect-square rounded-xl overflow-hidden border-2 border-surface-container group/img">
+                           <img src={preview} className="w-full h-full object-cover" alt={`Preview ${index}`} />
+                           
+                           {/* Overlay Controls */}
+                           <div className="absolute inset-0 bg-on-surface/60 opacity-0 group-hover/img:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
+                              <button 
+                                type="button"
+                                onClick={() => handleMakeThumbnail(index)}
+                                className={`px-2 py-1 text-[8px] font-black uppercase tracking-tighter rounded ${index === 0 ? 'bg-primary text-on-primary' : 'bg-surface text-on-surface hover:bg-primary hover:text-on-primary'}`}
+                              >
+                                {index === 0 ? 'Main Cover' : 'Set as Main'}
+                              </button>
+                              <button 
+                                type="button"
+                                onClick={() => handleRemoveImage(index)}
+                                className="p-1 bg-error text-on-error rounded-full hover:scale-110 transition-transform"
+                              >
+                                <span className="material-symbols-outlined text-sm">close</span>
+                              </button>
+                           </div>
+                           
+                           {index === 0 && (
+                             <div className="absolute top-2 left-2 bg-primary text-on-primary text-[8px] font-black uppercase px-2 py-0.5 rounded-full shadow-sm">
+                               Thumbnail
+                             </div>
+                           )}
+                        </div>
+                      ))}
+                      
+                      {imageFiles.length < 5 && (
+                        <div className="relative aspect-square border-2 border-dashed border-outline-variant rounded-xl bg-surface-container-low hover:bg-surface-container hover:border-outline transition-all cursor-pointer flex flex-col items-center justify-center text-on-surface-variant gap-1 overflow-hidden">
+                          <PlusCircle className="w-6 h-6 opacity-60" />
+                          <span className="text-[9px] font-black uppercase tracking-widest">Add Photo</span>
+                          <input 
+                            type="file" 
+                            multiple
+                            accept="image/*"
+                            onChange={handleFileChange}
+                            className="absolute inset-0 opacity-0 cursor-pointer"
+                          />
+                        </div>
+                      )}
+                    </div>
+                    
+                    {imageFiles.length === 0 && (
+                      <div className="bg-surface-container-low p-8 rounded-xl border-2 border-dashed border-outline-variant text-center space-y-2">
+                         <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40">No items selected</p>
+                         <p className="text-[9px] font-medium opacity-30">Minimum 1 photograph recommended for higher conversion.</p>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="space-y-2 md:col-span-2">
+                    <label className="text-xs font-black text-on-surface-variant uppercase tracking-widest">Detailed Context</label>
+                    <textarea 
+                      required 
+                      placeholder="Provide provenance, condition notes, and specific terms..." 
+                      className="w-full bg-surface-container border-none rounded-xl p-4 text-on-surface placeholder:text-on-surface/30 focus:ring-2 focus:ring-primary outline-none font-medium resize-none h-32"
+                      value={newItem.description} 
+                      onChange={(e) => setNewItem({...newItem, description: e.target.value})} 
                     />
                   </div>
                 </div>
-              </div>
 
-              <div className="lg:col-span-2 space-y-2">
-                <label className="text-xs font-bold text-slate-400 uppercase ml-1">Item Description</label>
-                <textarea 
-                  placeholder="Tell us about the condition, usage, and any other details..." 
-                  required 
-                  className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 text-sm font-semibold outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all min-h-[140px] resize-none"
-                  value={newItem.description} 
-                  onChange={(e) => setNewItem({...newItem, description: e.target.value})} 
-                />
-              </div>
-              
-              <button type="submit" className="bg-slate-900 text-white p-4 rounded-2xl font-black text-sm hover:bg-slate-800 transition-all md:col-span-2 lg:col-span-4 mt-2 shadow-xl shadow-slate-200">
-                LIST ON MARKETPLACE
-              </button>
-            </form>
-          </div>
-        )}
-
-        {/* PRODUCTS GRID */}
-        {loading ? (
-          <div className="flex flex-col items-center justify-center py-20 grayscale">
-            <ShoppingBag className="w-16 h-16 animate-bounce text-slate-200 mb-4" />
-            <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">Syncing items...</p>
-          </div>
-        ) : products.length === 0 ? (
-          <div className="bg-white border-2 border-dashed border-slate-200 rounded-[2.5rem] py-20 px-8 text-center">
-            <ShoppingBag className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-            <h3 className="text-xl font-bold text-slate-800 mb-2">No items listed yet</h3>
-            <p className="text-slate-500 mb-8 max-w-sm mx-auto">Be the first to list something! Your classmates are waiting.</p>
-            <button onClick={() => setShowAddForm(true)} className="text-blue-600 font-bold hover:underline">Get started now &rarr;</button>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-            {products.map((product) => (
-              <div key={product.id} className="group bg-white rounded-[2rem] shadow-xl shadow-slate-200/40 border border-slate-100 overflow-hidden hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 flex flex-col">
-                <div className="relative h-56 overflow-hidden">
-                  {product.images && product.images.length > 0 ? (
-                    <img src={product.images[0]} alt={product.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
-                  ) : (
-                    <div className="w-full h-full bg-slate-100 flex flex-col items-center justify-center text-slate-300">
-                      <ShoppingBag className="w-12 h-12 mb-2" />
-                      <span className="text-[10px] font-bold uppercase tracking-widest">No Preview Available</span>
-                    </div>
-                  )}
-                  <div className="absolute top-4 left-4">
-                    <span className={`px-4 py-1.5 text-[10px] font-black rounded-full shadow-lg backdrop-blur-md uppercase tracking-wider ${
-                      product.listingType === 'SELL' ? 'bg-indigo-600/90 text-white' : 'bg-amber-500/90 text-white'
-                    }`}>
-                      {product.listingType}
-                    </span>
-                  </div>
+                <div className="flex justify-end pt-4 border-t border-on-surface/5 mt-2">
+                  <button type="submit" className="bg-primary text-on-primary px-8 py-4 rounded-xl font-black uppercase text-sm tracking-widest active:scale-95 transition-transform hover:bg-[#842500]">
+                    Finalize Entry
+                  </button>
                 </div>
-                
-                <div className="p-6 flex-1 flex flex-col">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-1 text-blue-600 font-black text-2xl mb-1">
-                      <IndianRupee className="w-5 h-5" />
-                      {product.price.toLocaleString()}
-                    </div>
-                    <h3 className="text-lg font-bold text-slate-800 line-clamp-1 mb-2 group-hover:text-blue-600 transition-colors uppercase tracking-tight">{product.title}</h3>
-                    <p className="text-slate-500 text-sm font-medium line-clamp-2 leading-relaxed mb-4">{product.description}</p>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3 mt-4 pt-6 border-t border-slate-50">
-                    <div className="flex flex-col">
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Seller</span>
-                      <div className="flex items-center gap-1.5 overflow-hidden">
-                        <div className="w-5 h-5 bg-blue-100 rounded-full flex items-center justify-center text-[10px] font-bold text-blue-600 shrink-0 capitalize">
-                          {product.seller?.name?.charAt(0) || <UserIcon className="w-3 h-3" />}
-                        </div>
-                        <span className="text-xs font-bold text-slate-700 truncate">{product.seller?.name || 'IITP Student'}</span>
-                      </div>
-                    </div>
-                    <button 
-                      onClick={() => handleInterest(product)}
-                      className="bg-slate-900 text-white px-4 py-3 rounded-xl text-xs font-black hover:bg-blue-600 transition-all flex items-center justify-center gap-2 shadow-lg shadow-slate-200 active:scale-95"
-                    >
-                      <MessageSquare className="w-3 h-3" />
-                      CHAT
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
+             </form>
           </div>
-        )}
-      </div>
+        </div>
+      )}
+
+
+
     </div>
   );
 }

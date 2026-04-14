@@ -1,5 +1,81 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap');
 @import "tailwindcss";
+
+
+@theme {
+  --color-surface-bright: #fff8f1;
+  --color-error: #ba1a1a;
+  --color-on-tertiary-fixed-variant: #474746;
+  --color-surface-container: #f8edd8;
+  --color-on-secondary-container: #113b88;
+  --color-on-tertiary-container: #fffcfa;
+  --color-surface-variant: #ece1cd;
+  --color-on-background: #201b0e;
+  --color-on-surface-variant: #59413a;
+  --color-on-error: #ffffff;
+  --color-surface-container-low: #fef2dd;
+  --color-on-error-container: #93000a;
+  --color-surface-dim: #e4d9c4;
+  --color-on-primary-fixed: #3a0b00;
+  --color-tertiary-container: #757473;
+  --color-surface-tint: #ad3300;
+  --color-background: #fff8f1;
+  --color-primary-fixed: #ffdbd0;
+  --color-primary: #a93100;
+  --color-on-primary-container: #fffbff;
+  --color-outline-variant: #e2bfb5;
+  --color-inverse-on-surface: #fbf0da;
+  --color-on-secondary-fixed: #001847;
+  --color-secondary-container: #89a9fd;
+  --color-primary-container: #ce4714;
+  --color-surface: #fff8f1;
+  --color-on-tertiary-fixed: #1b1c1b;
+  --color-error-container: #ffdad6;
+  --color-on-secondary-fixed-variant: #1c4390;
+  --color-secondary: #395baa;
+  --color-on-primary: #ffffff;
+  --color-surface-container-highest: #ece1cd;
+  --color-tertiary-fixed: #e4e2e0;
+  --color-tertiary-fixed-dim: #c8c6c4;
+  --color-on-tertiary: #ffffff;
+  --color-on-primary-fixed-variant: #842500;
+  --color-outline: #8d7168;
+  --color-primary-fixed-dim: #ffb59e;
+  --color-surface-container-lowest: #ffffff;
+  --color-on-secondary: #ffffff;
+  --color-secondary-fixed: #dae2ff;
+  --color-tertiary: #5c5c5b;
+  --color-secondary-fixed-dim: #b1c5ff;
+  --color-inverse-primary: #ffb59e;
+  --color-on-surface: #201b0e;
+  --color-surface-container-high: #f2e7d2;
+  --color-inverse-surface: #363022;
+
+  --font-headline: "Inter", sans-serif;
+  --font-body: "Inter", sans-serif;
+  --font-label: "Inter", sans-serif;
+}
+
+body {
+  @apply bg-surface font-body text-on-surface antialiased;
+  min-height: max(884px, 100dvh);
+}
+
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+.organic-blob {
+  border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
+}
 
 .smooth-marker {
   transition: transform 2s linear !important;
+}
+
+.swiss-grid {
+  background-image: radial-gradient(#201b0e 0.5px, transparent 0.5px);
+  background-size: 24px 24px;
+  opacity: 0.03;
 }

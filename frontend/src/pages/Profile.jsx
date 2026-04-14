@@ -1,18 +1,26 @@
 import { useContext, useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
-import { User, Mail, ShieldCheck, MapPin, Phone, Text, Save, AlertCircle, LogOut, ShoppingBag, MessageSquare } from 'lucide-react';
+import { MessageSquare, ExternalLink, Image as ImageIcon } from 'lucide-react';
 
 export default function Profile() {
   const { user, token } = useContext(AuthContext);
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [isEditing, setIsEditing] = useState(false);
+  
+  // Add item form state
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newItem, setNewItem] = useState({ title: '', price: '', description: '', listingType: 'SELL' });
+  const [imageFiles, setImageFiles] = useState([]);
+  const [imagePreviews, setImagePreviews] = useState([]);
   
   // Local form state for editing
   const [bio, setBio] = useState('');
   const [contactNumber, setContactNumber] = useState('');
+  
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchProfile();
@@ -38,10 +46,88 @@ export default function Profile() {
     }
   };
 
+  const handleFileChange = (e) => {
+    const files = Array.from(e.target.files);
+    if (files.length + imageFiles.length > 5) {
+      alert("Maximum 5 images allowed per artifact.");
+      return;
+    }
+
+    const newFiles = [...imageFiles, ...files];
+    const newPreviews = [...imagePreviews, ...files.map(file => URL.createObjectURL(file))];
+    
+    setImageFiles(newFiles);
+    setImagePreviews(newPreviews);
+  };
+
+  const handleRemoveImage = (index) => {
+    const newFiles = [...imageFiles];
+    const newPreviews = [...imagePreviews];
+    
+    // Revoke URL to prevent memory leaks
+    URL.revokeObjectURL(newPreviews[index]);
+    
+    newFiles.splice(index, 1);
+    newPreviews.splice(index, 1);
+    
+    setImageFiles(newFiles);
+    setImagePreviews(newPreviews);
+  };
+
+  const handleMakeThumbnail = (index) => {
+    if (index === 0) return;
+    
+    const newFiles = [...imageFiles];
+    const newPreviews = [...imagePreviews];
+    
+    // Swap/Move to 0
+    const [targetFile] = newFiles.splice(index, 1);
+    const [targetPreview] = newPreviews.splice(index, 1);
+    
+    newFiles.unshift(targetFile);
+    newPreviews.unshift(targetPreview);
+    
+    setImageFiles(newFiles);
+    setImagePreviews(newPreviews);
+  };
+
+  const handleAddItem = async (e) => {
+    e.preventDefault();
+    const formData = new FormData();
+    formData.append('title', newItem.title);
+    formData.append('price', newItem.price);
+    formData.append('description', newItem.description);
+    formData.append('listingType', newItem.listingType);
+    
+    imageFiles.forEach(file => {
+      formData.append('images', file);
+    });
+
+    try {
+      const response = await fetch('http://localhost:5000/api/products', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: formData
+      });
+
+      if (response.ok) {
+        setShowAddForm(false);
+        setNewItem({ title: '', price: '', description: '', listingType: 'SELL' });
+        setImageFiles([]);
+        setImagePreviews([]);
+        fetchProfile(); // Refresh list to show new item
+      } else {
+        const errorData = await response.json();
+        alert(`Error: ${errorData.error}`);
+      }
+    } catch (error) {
+      console.error("Failed to post item", error);
+    }
+  };
+
   const handleUpdate = async (e) => {
     e.preventDefault();
     setError('');
-    setSuccess('');
     
     try {
       const res = await fetch('http://localhost:5000/api/users/profile', {
@@ -54,7 +140,7 @@ export default function Profile() {
       });
       const data = await res.json();
       if (res.ok) {
-        setSuccess('Profile updated successfully!');
+        setIsEditing(false);
         setProfile({ ...profile, bio, contactNumber });
       } else {
         setError(data.error || 'Update failed');
@@ -71,11 +157,10 @@ export default function Profile() {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {
-        setSuccess('Item marked as sold!');
         fetchProfile(); // Refresh list
       }
     } catch (err) {
-      setError('Failed to update status');
+      console.error('Failed to update status', err);
     }
   };
 
@@ -87,192 +172,323 @@ export default function Profile() {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {
-        setSuccess('Listing deleted!');
         fetchProfile(); // Refresh list
       }
     } catch (err) {
-      setError('Failed to delete item');
+      console.error('Failed to delete item', err);
     }
   };
 
   if (loading) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-slate-50 min-h-screen">
-        <div className="animate-pulse text-blue-600 font-bold text-lg tracking-widest">SYNCHRONIZING PROFILE...</div>
+      <div className="flex-1 min-h-screen bg-surface flex items-center justify-center">
+        <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
 
   return (
-    <div className="flex-1 bg-slate-50 min-h-screen p-4 md:p-8 animate-in fade-in duration-500 overflow-auto">
-      <div className="max-w-5xl mx-auto pb-20">
-        <div className="flex items-center justify-between mb-8">
-          <h2 className="text-3xl font-black text-slate-800 tracking-tight">Profile Dashboard</h2>
-          <div className="bg-white px-4 py-2 rounded-full border border-slate-100 shadow-sm flex items-center gap-2">
-            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Active Session</span>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-12">
-          {/* LEFT COL: USER CARD */}
-          <div className="lg:col-span-4 space-y-6">
-            <div className="bg-white p-8 rounded-[2.5rem] shadow-xl shadow-slate-200/50 border border-slate-100 flex flex-col items-center text-center relative overflow-hidden group">
-              <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                 <User className="w-20 h-20 rotate-12" />
-              </div>
-              <div className="w-28 h-28 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-full flex items-center justify-center text-white text-4xl font-bold mb-4 shadow-xl shadow-blue-200 border-4 border-white">
-                {profile?.name ? profile.name.charAt(0).toUpperCase() : '?'}
-              </div>
-              <h3 className="text-2xl font-black text-slate-800 tracking-tight">{profile?.name}</h3>
-              <div className="mt-2 px-4 py-1 bg-blue-50 text-blue-600 rounded-full text-[10px] font-black uppercase tracking-widest border border-blue-100">
-                {profile?.role || 'IIT Patna Student'}
-              </div>
-              
-              <div className="mt-8 w-full space-y-4 pt-8 border-t border-slate-50 text-left">
-                <div className="flex items-center gap-3 group/item">
-                  <div className="p-2 bg-slate-50 rounded-lg group-hover/item:bg-blue-50 transition-colors">
-                    <Mail className="w-4 h-4 text-slate-400 group-hover/item:text-blue-500" />
-                  </div>
-                  <span className="text-sm font-semibold text-slate-600 truncate">{profile?.email}</span>
+    <div className="relative overflow-hidden bg-surface pb-24">
+      {/* Background Organic Blobs */}
+      <div className="absolute top-40 -left-20 w-96 h-96 bg-primary rounded-full blur-[80px] opacity-15 pointer-events-none -z-10"></div>
+      <div className="absolute top-80 right-0 w-[500px] h-[500px] bg-secondary rounded-full blur-[80px] opacity-15 pointer-events-none -z-10"></div>
+      
+      <main className="pt-16 md:pt-24 px-6 md:px-16 max-w-[1920px] mx-auto relative overflow-hidden">
+        
+        {/* Top Profile Section */}
+        <section className="mb-24 grid grid-cols-1 md:grid-cols-12 gap-12">
+          {/* Left Column: Avatar & Name sticky */}
+          <div className="md:col-span-4">
+            <div className="md:sticky md:top-32 space-y-8">
+              <div className="relative w-32 h-32 md:w-48 md:h-48 mb-8 group">
+                <div className="w-full h-full bg-surface-container-highest rounded-xl flex items-center justify-center text-4xl md:text-6xl font-black text-on-surface uppercase border-2 border-primary">
+                  {profile?.name?.charAt(0) || '?'}
                 </div>
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-green-50 rounded-lg">
-                    <ShieldCheck className="w-4 h-4 text-green-500" />
-                  </div>
-                  <span className="text-sm font-semibold text-slate-600">Verified identity</span>
-                </div>
+                {!isEditing && (
+                  <button onClick={() => setIsEditing(true)} className="absolute -bottom-4 -right-4 w-12 h-12 bg-primary flex items-center justify-center rounded-lg hover:bg-[#842500] transition-colors shadow-lg active:scale-95">
+                    <span className="material-symbols-outlined text-on-primary">edit</span>
+                  </button>
+                )}
+              </div>
+              <h1 className="text-5xl md:text-7xl lg:text-8xl font-black tracking-tighter leading-none uppercase break-words">
+                {profile?.name?.split(' ').map((n, i) => (
+                   <span key={i} className="block">{n}</span>
+                ))}
+              </h1>
+              <div className="inline-block bg-primary text-on-primary px-3 py-1 font-bold text-xs uppercase tracking-widest mt-4">
+                 Verified Curator
               </div>
             </div>
-
           </div>
-
-          {/* RIGHT COL: SETUP & DETAILS */}
-          <div className="lg:col-span-8 flex flex-col gap-6">
-            <form onSubmit={handleUpdate} className="bg-white p-8 rounded-[2.5rem] shadow-xl shadow-slate-200/50 border border-slate-100 flex-1 relative">
-              <div className="flex items-center justify-between mb-8 border-b border-slate-50 pb-6">
-                <h4 className="text-xl font-black text-slate-800 flex items-center gap-2">
-                  <Text className="w-5 h-5 text-blue-600" />
-                  About & Contact
-                </h4>
-                {success && <span className="text-[10px] bg-green-100 text-green-700 px-3 py-1 rounded-full font-black uppercase tracking-widest flex items-center gap-1 animate-bounce">Saved <Save className="w-3 h-3" /></span>}
-              </div>
-
-              {error && (
-                <div className="bg-red-50 text-red-600 p-4 rounded-2xl flex items-center gap-3 text-sm font-bold border border-red-100 mb-6">
-                  <AlertCircle className="w-5 h-5" /> {error}
-                </div>
-              )}
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                 <div className="md:col-span-2 space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Personal Bio</label>
+          
+          {/* Right Column: Bio & Details */}
+          <div className="md:col-span-7 md:col-start-6">
+            <div className="bg-surface-container-low p-8 md:p-12 space-y-12 rounded-xl">
+              
+              {!isEditing ? (
+                <>
+                  <div>
+                    <span className="text-primary font-black tracking-widest uppercase text-xs mb-4 block">Manifesto / Bio</span>
+                    <p className="text-xl md:text-2xl leading-snug font-medium max-w-2xl text-on-surface">
+                      {profile?.bio || "No manifesto provided. A mysterious curator indeed."}
+                    </p>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 border-t border-on-surface/10 pt-8">
+                    <div>
+                      <span className="text-on-surface-variant font-black tracking-widest uppercase text-[10px] mb-2 block">Direct Email</span>
+                      <a href={`mailto:${profile?.email}`} className="text-sm md:text-lg font-bold hover:text-primary transition-colors truncate block">
+                        {profile?.email}
+                      </a>
+                    </div>
+                    <div>
+                      <span className="text-on-surface-variant font-black tracking-widest uppercase text-[10px] mb-2 block">Dispatch Number</span>
+                      <p className="text-sm md:text-lg font-bold">{profile?.contactNumber || "Not Available"}</p>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <form onSubmit={handleUpdate} className="space-y-8">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-2xl font-black uppercase text-on-surface">Edit Dossier</h3>
+                    {error && <span className="text-xs text-error font-bold bg-error-container px-3 py-1">{error}</span>}
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black tracking-widest uppercase text-on-surface-variant">Manifesto / Bio</label>
                     <textarea 
-                      className="w-full bg-slate-50 border border-slate-200 rounded-3xl p-5 text-sm font-semibold outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all min-h-[120px] resize-none leading-relaxed"
-                      placeholder="Share a bit about yourself with the campus community..."
+                      className="w-full bg-surface-container p-4 outline-none focus:ring-2 focus:ring-primary rounded-xl font-medium resize-none h-32"
+                      placeholder="Declare your curatorial vision..."
                       value={bio}
                       onChange={(e) => setBio(e.target.value)}
                     ></textarea>
-                 </div>
-
-                 <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Contact WhatsApp</label>
-                    <div className="relative">
-                      <Phone className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                      <input 
-                        type="text"
-                        className="w-full bg-slate-50 border border-slate-200 rounded-[1.5rem] p-4 pl-12 text-sm font-black outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all"
-                        placeholder="+91-XXXXX-XXXXX"
-                        value={contactNumber}
-                        onChange={(e) => setContactNumber(e.target.value)}
-                      />
-                    </div>
-                 </div>
-
-                 <div className="flex items-end">
-                    <button 
-                      type="submit"
-                      className="w-full bg-blue-600 text-white rounded-[1.5rem] p-4 font-black text-sm flex items-center justify-center gap-2 hover:bg-blue-500 hover:-translate-y-0.5 active:scale-95 transition-all shadow-lg shadow-blue-100"
-                    >
-                      <Save className="w-4 h-4" />
-                      UPDATE PROFILE
-                    </button>
-                 </div>
-              </div>
-            </form>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black tracking-widest uppercase text-on-surface-variant">Dispatch Number</label>
+                    <input 
+                      type="text" 
+                      className="w-full bg-surface-container p-4 outline-none focus:ring-2 focus:ring-primary rounded-xl font-bold"
+                      placeholder="+91 XXXXX XXXXX"
+                      value={contactNumber}
+                      onChange={(e) => setContactNumber(e.target.value)}
+                    />
+                  </div>
+                  
+                  <div className="flex gap-4 pt-4">
+                    <button type="button" onClick={() => setIsEditing(false)} className="px-6 py-3 font-black uppercase text-xs tracking-widest text-on-surface hover:bg-surface-variant active:scale-95 transition-all">Cancel</button>
+                    <button type="submit" className="px-6 py-3 bg-primary text-on-primary font-black uppercase text-xs tracking-widest hover:bg-[#842500] active:scale-95 transition-all rounded-lg">Update Records</button>
+                  </div>
+                </form>
+              )}
+            </div>
           </div>
-        </div>
-
-        {/* BOTTOM SECTION: MY LISTINGS */}
-        <div className="space-y-6">
-          <div className="flex items-center gap-4">
-            <h3 className="text-2xl font-black text-slate-800 tracking-tight">Your Listings</h3>
-            <div className="h-px flex-1 bg-slate-200 hidden sm:block"></div>
+        </section>
+        
+        {/* Bottom Section: Listings */}
+        <section className="mb-12">
+          <div className="flex items-baseline justify-between mb-16 border-b-2 border-on-surface/20 pb-4">
+            <h2 className="text-3xl md:text-4xl font-black tracking-tighter uppercase text-on-surface">My Archives</h2>
+            <span className="font-black text-xl tracking-tighter text-on-surface-variant">({profile?.products?.length || '00'})</span>
           </div>
           
-          {profile?.products?.length === 0 ? (
-            <div className="bg-white border-2 border-dashed border-slate-200 rounded-[2.5rem] py-16 text-center shadow-sm">
-               <ShoppingBag className="w-12 h-12 text-slate-200 mx-auto mb-4" />
-               <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">You haven't posted any items yet</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            
+            {profile?.products?.map((item) => (
+              <div key={item.id} className={`bg-surface-container-lowest p-6 flex flex-col h-full group rounded-xl shadow-sm border border-surface-container ${item.status !== 'AVAILABLE' ? 'opacity-70 grayscale' : ''}`}>
+                <div className="relative mb-6 overflow-hidden aspect-[4/5] bg-surface-container flex items-center justify-center rounded-lg">
+                  {item.images && item.images.length > 0 ? (
+                    <img 
+                      src={item.images[0].startsWith('http') ? item.images[0] : `http://localhost:5000${item.images[0]}`} 
+                      alt={item.title} 
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" 
+                    />
+                  ) : (
+                    <span className="material-symbols-outlined text-6xl opacity-30">image_not_supported</span>
+                  )}
+                  
+                  <div className="absolute top-4 left-4 flex gap-2">
+                    <span className={`text-[10px] font-black tracking-widest uppercase px-3 py-1 rounded-full text-on-primary ${item.status === 'AVAILABLE' ? 'bg-primary' : 'bg-on-surface'}`}>
+                      {item.status === 'AVAILABLE' ? 'Active' : 'Archived'}
+                    </span>
+                  </div>
+                </div>
+                
+                <div className="flex-grow">
+                  <h3 className="text-xl font-black tracking-tight uppercase mb-1 text-on-surface line-clamp-2">{item.title}</h3>
+                  <p className="text-secondary font-bold mb-4">₹{item.price}</p>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-2 mt-auto">
+                  {item.status === 'AVAILABLE' ? (
+                    <>
+                      <button onClick={() => handleDelete(item.id)} className="bg-surface-container-highest text-on-surface py-3 text-[10px] font-black tracking-widest uppercase hover:bg-error hover:text-white transition-colors active:scale-95 rounded">
+                        Unlist
+                      </button>
+                      <button onClick={() => handleMarkAsSold(item.id)} className="bg-on-surface text-surface py-3 text-[10px] font-black tracking-widest uppercase hover:bg-primary transition-colors active:scale-95 rounded">
+                        Sold
+                      </button>
+                    </>
+                  ) : (
+                    <button className="col-span-2 bg-surface-container text-on-surface-variant py-3 text-[10px] font-black tracking-widest uppercase cursor-not-allowed rounded">
+                        Listing Closed
+                    </button>
+                  )}
+                </div>
+                <div className="mt-2">
+                  <Link to="/chat" className="w-full flex items-center justify-center gap-2 bg-secondary text-on-secondary py-3 text-[10px] font-black tracking-widest uppercase hover:bg-[#113b88] transition-colors active:scale-95 rounded">
+                     <MessageSquare className="w-4 h-4" /> Chats
+                  </Link>
+                </div>
+              </div>
+            ))}
+            
+            {/* Add New Box */}
+            <div 
+              onClick={() => setShowAddForm(true)}
+              className="bg-surface-container p-6 flex flex-col items-center justify-center text-center cursor-pointer hover:border-primary border-2 border-dashed border-outline-variant hover:bg-surface-container-high transition-colors rounded-xl min-h-[300px]"
+            >
+              <span className="material-symbols-outlined text-4xl mb-4 text-primary">add_circle</span>
+              <h3 className="text-xl font-black tracking-tight uppercase mb-1 text-on-surface">New Exhibit</h3>
+              <p className="text-[10px] font-bold uppercase tracking-widest opacity-60 text-on-surface">Publish an artifact</p>
             </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-               {profile?.products?.map((item) => (
-                 <div key={item.id} className={`bg-white rounded-[2rem] border border-slate-100 shadow-xl shadow-slate-200/40 p-5 flex flex-col relative group transition-all ${item.status !== 'AVAILABLE' ? 'opacity-60 grayscale' : ''}`}>
-                   <div className="relative h-40 bg-slate-100 rounded-3xl mb-4 overflow-hidden">
-                      {item.images?.[0] ? (
-                        <img src={item.images[0]} className="w-full h-full object-cover" alt={item.title} />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center grayscale opacity-20">
-                           <ShoppingBag className="w-8 h-8" />
+            
+          </div>
+        </section>
+      </main>
+
+      {/* Add Item Modal */}
+      {showAddForm && (
+        <div className="fixed inset-0 z-[60] bg-on-background/40 backdrop-blur-sm flex justify-center items-center p-4">
+          <div className="bg-surface w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+             <div className="flex justify-between items-center p-6 border-b border-on-surface/5 bg-surface-bright">
+               <h3 className="text-2xl font-black uppercase tracking-tighter text-on-surface">List an Artifact</h3>
+               <button onClick={() => setShowAddForm(false)} className="p-2 hover:bg-surface-variant rounded-full transition-colors text-on-surface">
+                 <span className="material-symbols-outlined">close</span>
+               </button>
+             </div>
+             
+             <form onSubmit={handleAddItem} className="p-6 md:p-8 flex flex-col gap-6 max-h-[80vh] overflow-y-auto">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2 md:col-span-2">
+                    <label className="text-xs font-black text-on-surface-variant uppercase tracking-widest">Headline Title</label>
+                    <input 
+                      type="text" 
+                      required 
+                      autoFocus
+                      placeholder="e.g. Vintage Task Light / Textbook" 
+                      className="w-full bg-surface-container border-none rounded-xl p-4 text-on-surface placeholder:text-on-surface/30 focus:ring-2 focus:ring-primary outline-none font-bold"
+                      value={newItem.title} 
+                      onChange={(e) => setNewItem({...newItem, title: e.target.value})} 
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label className="text-xs font-black text-on-surface-variant uppercase tracking-widest">Pricing (₹)</label>
+                    <input 
+                      type="number" 
+                      required 
+                      placeholder="e.g. 500" 
+                      className="w-full bg-surface-container border-none rounded-xl p-4 text-on-surface placeholder:text-on-surface/30 focus:ring-2 focus:ring-primary outline-none font-bold appearance-none"
+                      value={newItem.price} 
+                      onChange={(e) => setNewItem({...newItem, price: e.target.value})} 
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label className="text-xs font-black text-on-surface-variant uppercase tracking-widest">Transaction Method</label>
+                    <select 
+                      className="w-full bg-surface-container border-none rounded-xl p-4 text-on-surface focus:ring-2 focus:ring-primary outline-none font-bold block appearance-none"
+                      value={newItem.listingType} 
+                      onChange={(e) => setNewItem({...newItem, listingType: e.target.value})}
+                    >
+                      <option value="SELL">Purchase Outright</option>
+                      <option value="RENT">Rental Agreement</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-4 md:col-span-2">
+                    <div className="flex justify-between items-center">
+                      <label className="text-xs font-black text-on-surface-variant uppercase tracking-widest">Photographic Evidence</label>
+                      <span className="text-[10px] font-bold text-primary uppercase tracking-widest">{imageFiles.length}/5 Images</span>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                      {imagePreviews.map((preview, index) => (
+                        <div key={index} className="relative aspect-square rounded-xl overflow-hidden border-2 border-surface-container group/img">
+                           <img src={preview} className="w-full h-full object-cover" alt={`Preview ${index}`} />
+                           
+                           {/* Overlay Controls */}
+                           <div className="absolute inset-0 bg-on-surface/60 opacity-0 group-hover/img:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
+                              <button 
+                                type="button"
+                                onClick={() => handleMakeThumbnail(index)}
+                                className={`px-2 py-1 text-[8px] font-black uppercase tracking-tighter rounded ${index === 0 ? 'bg-primary text-on-primary' : 'bg-surface text-on-surface hover:bg-primary hover:text-on-primary'}`}
+                              >
+                                {index === 0 ? 'Main Cover' : 'Set as Main'}
+                              </button>
+                              <button 
+                                type="button"
+                                onClick={() => handleRemoveImage(index)}
+                                className="p-1 bg-error text-on-error rounded-full hover:scale-110 transition-transform"
+                              >
+                                <span className="material-symbols-outlined text-sm">close</span>
+                              </button>
+                           </div>
+                           
+                           {index === 0 && (
+                             <div className="absolute top-2 left-2 bg-primary text-on-primary text-[8px] font-black uppercase px-2 py-0.5 rounded-full shadow-sm">
+                               Thumbnail
+                             </div>
+                           )}
+                        </div>
+                      ))}
+                      
+                      {imageFiles.length < 5 && (
+                        <div className="relative aspect-square border-2 border-dashed border-outline-variant rounded-xl bg-surface-container-low hover:bg-surface-container hover:border-outline transition-all cursor-pointer flex flex-col items-center justify-center text-on-surface-variant gap-1 overflow-hidden">
+                          <ImageIcon className="w-6 h-6 opacity-60" />
+                          <span className="text-[9px] font-black uppercase tracking-widest">Add Photo</span>
+                          <input 
+                            type="file" 
+                            multiple
+                            accept="image/*"
+                            onChange={handleFileChange}
+                            className="absolute inset-0 opacity-0 cursor-pointer"
+                          />
                         </div>
                       )}
-                      <div className="absolute top-3 left-3 flex gap-2">
-                         <span className={`px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-wider shadow-md ${item.status === 'AVAILABLE' ? 'bg-green-500 text-white' : 'bg-slate-800 text-white'}`}>
-                            {item.status === 'AVAILABLE' ? 'Live' : item.status.replace('_', ' ')}
-                         </span>
-                         <span className="px-3 py-1 bg-white/90 backdrop-blur-sm rounded-full text-[8px] font-black uppercase tracking-wider text-slate-800 shadow-sm border border-white">
-                            {item.listingType}
-                         </span>
+                    </div>
+                    
+                    {imageFiles.length === 0 && (
+                      <div className="bg-surface-container-low p-8 rounded-xl border-2 border-dashed border-outline-variant text-center space-y-2">
+                         <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40">No items selected</p>
+                         <p className="text-[9px] font-medium opacity-30">Minimum 1 photograph recommended for higher conversion.</p>
                       </div>
-                   </div>
+                    )}
+                  </div>
 
-                   <div className="flex-1">
-                      <h4 className="font-black text-slate-800 text-lg line-clamp-1 mb-1">{item.title}</h4>
-                      <p className="text-blue-600 font-black text-sm mb-4">₹{item.price.toLocaleString()}</p>
-                   </div>
+                  <div className="space-y-2 md:col-span-2">
+                    <label className="text-xs font-black text-on-surface-variant uppercase tracking-widest">Detailed Context</label>
+                    <textarea 
+                      required 
+                      placeholder="Provide provenance, condition notes, and specific terms..." 
+                      className="w-full bg-surface-container border-none rounded-xl p-4 text-on-surface placeholder:text-on-surface/30 focus:ring-2 focus:ring-primary outline-none font-medium resize-none h-32"
+                      value={newItem.description} 
+                      onChange={(e) => setNewItem({...newItem, description: e.target.value})} 
+                    />
+                  </div>
+                </div>
 
-                   <div className="flex gap-2 mt-2 pt-4 border-t border-slate-50">
-                      <Link 
-                        to="/chat"
-                        className="p-2.5 bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white rounded-xl transition-all flex items-center justify-center gap-1.5 shrink-0"
-                        title="View Product Chats"
-                      >
-                        <MessageSquare className="w-4 h-4" />
-                        <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">Chats</span>
-                      </Link>
-                      {item.status === 'AVAILABLE' && (
-                        <button 
-                          onClick={() => handleMarkAsSold(item.id)}
-                          className="flex-1 bg-slate-100 text-slate-600 px-3 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-200 transition-colors"
-                        >
-                          Mark Sold
-                        </button>
-                      )}
-                      <button 
-                        onClick={() => handleDelete(item.id)}
-                        className="p-2.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
-                        title="Delete"
-                      >
-                        <LogOut className="w-5 h-5 rotate-90" />
-                      </button>
-                   </div>
-                 </div>
-               ))}
-            </div>
-          )}
+                <div className="flex justify-end pt-4 border-t border-on-surface/5 mt-2">
+                  <button type="submit" className="bg-primary text-on-primary px-8 py-4 rounded-xl font-black uppercase text-sm tracking-widest active:scale-95 transition-transform hover:bg-[#842500]">
+                    Finalize Entry
+                  </button>
+                </div>
+             </form>
+          </div>
         </div>
-      </div>
+      )}
+
     </div>
   );
 }

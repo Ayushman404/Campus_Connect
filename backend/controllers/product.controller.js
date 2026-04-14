@@ -6,12 +6,11 @@ export const createProduct = async (req, res) => {
     const { title, description, price, listingType, stockQuantity } = req.body;
     const sellerId = req.user.id; 
 
-    // Construct the image URL if a file was uploaded
+    // Construct the image URLs if files were uploaded
     let imageUrls = [];
-    if (req.file) {
-      // Use the server URL
+    if (req.files && req.files.length > 0) {
       const baseUrl = `${req.protocol}://${req.get('host')}`;
-      imageUrls.push(`${baseUrl}/uploads/${req.file.filename}`);
+      imageUrls = req.files.map(file => `${baseUrl}/uploads/${file.filename}`);
     }
 
     const product = await prisma.product.create({

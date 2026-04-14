@@ -1,33 +1,46 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { useContext } from 'react';
 import { AuthContext, AuthProvider } from './context/AuthContext';
-import Navbar from './components/Navbar';
+import GlobalSidebar from './components/GlobalSidebar';
+import MarketplaceNavbar from './components/MarketplaceNavbar';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Marketplace from './pages/Marketplace';
 import Profile from './pages/Profile';
 import Chat from './pages/Chat';
+import ProductDetail from './pages/ProductDetail';
 
-function Layout({ children }) {
+function MainLayout({ children }) {
   return (
-    <div className="flex flex-col h-screen w-screen overflow-hidden">
-      <Navbar />
-      <main className="flex-1 overflow-auto bg-slate-50">
+    <div className="flex h-[100dvh] w-full font-body bg-surface overflow-hidden relative">
+      <GlobalSidebar />
+      <div className="flex-1 overflow-y-auto relative h-full">
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function MarketplaceLayout({ children }) {
+  return (
+    <div className="min-h-full w-full flex flex-col relative bg-surface">
+      <MarketplaceNavbar />
+      <main className="flex-1 w-full flex flex-col pt-20 pb-20 md:pb-0">
         {children}
       </main>
     </div>
   );
 }
 
-function ProtectedRoute({ children }) {
+function ProtectedRoute({ children, isMarketplace = false }) {
   const { user, token, loading } = useContext(AuthContext);
 
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-slate-900">
+      <div className="flex h-screen w-full items-center justify-center bg-surface">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-white font-bold tracking-widest uppercase text-xs">Campus Connect</p>
+          <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-on-surface font-bold tracking-widest uppercase text-xs">Loading Sector</p>
         </div>
       </div>
     );
@@ -37,7 +50,11 @@ function ProtectedRoute({ children }) {
     return <Navigate to="/login" replace />;
   }
 
-  return <Layout>{children}</Layout>;
+  // If this route is a marketplace route, wrap that inner layer with MarketplaceLayout
+  const content = isMarketplace ? <MarketplaceLayout>{children}</MarketplaceLayout> : children;
+
+  // We wrap everything in MainLayout
+  return <MainLayout>{content}</MainLayout>;
 }
 
 function App() {
@@ -46,10 +63,11 @@ function App() {
       <Router>
         <Routes>
           <Route path="/login" element={<Login />} />
+          <Route path="/" element={<Navigate to="/bus" replace />} />
           <Route 
-            path="/" 
+            path="/bus" 
             element={
-              <ProtectedRoute>
+              <ProtectedRoute isMarketplace={false}>
                 <Dashboard />
               </ProtectedRoute>
             } 
@@ -57,15 +75,23 @@ function App() {
           <Route 
             path="/marketplace" 
             element={
-              <ProtectedRoute>
+              <ProtectedRoute isMarketplace={true}>
                 <Marketplace />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/product/:id" 
+            element={
+              <ProtectedRoute isMarketplace={true}>
+                <ProductDetail />
               </ProtectedRoute>
             } 
           />
           <Route 
             path="/profile" 
             element={
-              <ProtectedRoute>
+              <ProtectedRoute isMarketplace={true}>
                 <Profile />
               </ProtectedRoute>
             } 
@@ -73,7 +99,7 @@ function App() {
           <Route 
             path="/chat" 
             element={
-              <ProtectedRoute>
+              <ProtectedRoute isMarketplace={true}>
                 <Chat />
               </ProtectedRoute>
             } 

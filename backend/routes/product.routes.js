@@ -9,7 +9,7 @@ const router = express.Router();
 router.get('/', verifyToken, getProducts);
 
 // POST /api/products (Create a listing)
-router.post('/', verifyToken, upload.single('image'), createProduct);
+router.post('/', verifyToken, upload.array('images', 5), createProduct);
 
 // POST /api/products/:id/interest (Click "I'm interested")
 router.post('/:id/interest', verifyToken, expressInterest);

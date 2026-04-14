@@ -1,106 +1,99 @@
 import React, { useEffect, useState } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
-import L from 'leaflet';
 import { io } from 'socket.io-client';
-import 'leaflet/dist/leaflet.css';
-
-// Default big icon for main buses
-const mainBusIcon = new L.Icon({
-  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-  iconSize: [25, 41], iconAnchor: [12, 41]
-});
-
-// Small dot icon for unselected buses
-const dotIcon = L.divIcon({
-  className: 'bg-slate-400 w-3 h-3 rounded-full border-2 border-white shadow-sm',
-  iconSize: [12, 12],
-  iconAnchor: [6, 6]
-});
+import { Map, MapMarker, MarkerContent, MarkerLabel, useMap } from './ui/map';
 
 const socket = io('http://localhost:5000');
 
-// Camera controller to focus on the selected bus
-const MapFocusController = ({ selectedBus, activeBuses }) => {
-  const map = useMap();
-
+// MapController uses the map context to fly to new centers
+const MapFocusController = ({ center, zoom }) => {
+  const { map } = useMap();
   useEffect(() => {
-    if (selectedBus && activeBuses[selectedBus.id]) {
-      const [lat, lng] = activeBuses[selectedBus.id];
-      // Fly to the bus and zoom in
-      map.flyTo([lat, lng], 17, { duration: 1.5 });
-    } else if (!selectedBus) {
-      // Zoom out slightly to see all campus when back button is pressed
-      map.flyTo([25.5358, 84.8511], 15, { duration: 1.5 });
+    if (map && center) {
+      map.flyTo({ center, zoom, duration: 1500 });
     }
-  }, [selectedBus, activeBuses, map]);
-
+  }, [map, center, zoom]);
   return null;
 };
 
 const CampusMap = ({ selectedBus }) => {
-  const iitpCenter = [25.5358, 84.8511];
+  // MapLibre requires coordinates in [longitude, latitude] order
+  const iitpCenterLngLat = [84.8511, 25.5358];
   
-  // Define bounds to keep the view restricted to the campus area
-  // Roughly: [South-West Lat/Lng, North-East Lat/Lng]
+  // Bounds [Southwest [lng, lat], Northeast [lng, lat]]
   const campusBounds = [
-    [25.5250, 81.8350], // Southwest corner
-    [27.5450, 87.9700]  // Northeast corner
+    [81.8350, 25.5250],
+    [87.9700, 27.5450]
   ];
 
   const [activeBuses, setActiveBuses] = useState({});
+  const [mapCenter, setMapCenter] = useState(iitpCenterLngLat);
+  const [mapZoom, setMapZoom] = useState(15);
 
   useEffect(() => {
-    // Dummy active buses data for testing
+    // Initial static positions [lng, lat]
     setActiveBuses({
-      'BUS-01': [25.5358, 84.8511],
-      'BUS-02': [25.5360, 84.8520],
-      'BUS-03': [25.5340, 84.8500],
-      'BUS-04': [25.5370, 84.8530],
-      'BUS-05': [25.5350, 84.8490]
+      'BUS-01': [84.8511, 25.5358],
+      'BUS-02': [84.8520, 25.5360],
+      'BUS-03': [84.8500, 25.5340],
+      'BUS-04': [84.8530, 25.5370],
+      'BUS-05': [84.8490, 25.5350]
     });
 
     socket.on('busMoved', (data) => {
-      setActiveBuses(prev => ({ ...prev, [data.busId]: [data.lat, data.lng] }));
+      setActiveBuses(prev => ({ ...prev, [data.busId]: [data.lng, data.lat] }));
     });
     return () => socket.off('busMoved');
   }, []);
 
-  return (
-    <div className="h-full w-full z-0">
-      <MapContainer 
-        center={iitpCenter} 
-        zoom={15} 
-        minZoom={14}               // 1. Prevents zooming out too far
-        maxBounds={campusBounds}    // 2. Prevents panning away from campus
-        maxBoundsViscosity={1.0}    // 3. Makes the boundary "hard" so map bounces back
-        zoomControl={false} 
-        className="h-full w-full"
-      >
-        
-        {/* Handles the zooming logic */}
-        <MapFocusController selectedBus={selectedBus} activeBuses={activeBuses} />
+  // Sync the map center/zoom with the selected bus
+  useEffect(() => {
+    if (selectedBus && activeBuses[selectedBus.id]) {
+      setMapCenter(activeBuses[selectedBus.id]);
+      setMapZoom(17);
+    } else {
+      setMapCenter(iitpCenterLngLat);
+      setMapZoom(15);
+    }
+  }, [selectedBus, activeBuses]);
 
-        <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+  return (
+    <div className="h-full w-full absolute inset-0 z-0 bg-surface">
+      <Map 
+        center={iitpCenterLngLat} 
+        zoom={15} 
+        minZoom={14}
+        maxBounds={campusBounds}
+      >
+        <MapFocusController center={mapCenter} zoom={mapZoom} />
 
         {Object.entries(activeBuses).map(([busId, coords]) => {
           const isSelected = selectedBus && selectedBus.id === busId;
           const isDimmed = selectedBus && !isSelected;
           
           return (
-            <Marker 
+            <MapMarker 
               key={busId} 
-              position={coords} 
-              icon={isDimmed ? dotIcon : mainBusIcon}
-              zIndexOffset={isSelected ? 1000 : 0} 
+              longitude={coords[0]} 
+              latitude={coords[1]}
             >
-              {!isDimmed && (
-                <Popup>🚌 {busId} <span className="text-green-500">● Live</span></Popup>
-              )}
-            </Marker>
+              <MarkerContent>
+                <div 
+                  className={`border-[2.5px] border-surface-bright shadow-lg rounded-full flex items-center justify-center transition-all ${
+                    isSelected ? 'w-6 h-6 bg-primary animate-pulse' : (isDimmed ? 'w-3 h-3 bg-outline-variant/60' : 'w-5 h-5 bg-primary')
+                  }`}
+                />
+                {!isDimmed && (
+                  <MarkerLabel position="bottom">
+                    <span className="bg-surface-container-highest py-1.5 px-3 rounded-xl border border-on-surface/5 text-on-surface shadow-xl text-[10px] whitespace-nowrap flex items-center gap-1.5 font-black uppercase tracking-widest mt-1">
+                      🚌 {busId} <span className="text-primary animate-pulse ml-1 text-xs">●</span> Live
+                    </span>
+                  </MarkerLabel>
+                )}
+              </MarkerContent>
+            </MapMarker>
           );
         })}
-      </MapContainer>
+      </Map>
     </div>
   );
 };
