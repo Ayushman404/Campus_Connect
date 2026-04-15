@@ -3,7 +3,9 @@ import * as Location from "expo-location";
 import { io } from "socket.io-client";
 import { useRef, useEffect, useState } from "react";
 
-const socket = io("http://192.168.29.130:5000", {
+const API_URL = process.env.EXPO_PUBLIC_API_URL || "http://192.168.29.130:5000";
+
+const socket = io(API_URL, {
   transports: ["websocket"],
   reconnection: true
 });
@@ -38,7 +40,7 @@ export default function HomeScreen() {
       (location) => {
 
         const payload = {
-          busId: "IITP-BUS-01",
+          busId: "BR01PM6850", // Matches Bus 01 in the real schedule
           lat: location.coords.latitude,
           lng: location.coords.longitude,
           timestamp: new Date().toISOString()

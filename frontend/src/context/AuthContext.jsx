@@ -1,4 +1,5 @@
 import { createContext, useState, useEffect } from 'react';
+import { apiFetch } from '../lib/api';
 
 export const AuthContext = createContext();
 
@@ -10,7 +11,7 @@ export const AuthProvider = ({ children }) => {
   // When app loads, if there is a token, try to fetch the profile
   useEffect(() => {
     if (token) {
-      fetch('http://localhost:5000/api/users/profile', {
+      apiFetch('/api/users/profile', {
         headers: {
           'Authorization': `Bearer ${token}`
         }

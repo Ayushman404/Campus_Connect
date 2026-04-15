@@ -5,7 +5,14 @@ export const getLiveBuses = async (req, res) => {
   try {
     const buses = await prisma.bus.findMany({
       where: { status: 'ACTIVE' },
-      select: { busNumber: true, lat: true, lng: true, lastUpdated: true }
+      select: { 
+        busNumber: true, 
+        lat: true, 
+        lng: true, 
+        lastUpdated: true,
+        driverName: true,
+        driverContact: true
+      }
     });
     res.status(200).json(buses);
   } catch (error) {
@@ -30,11 +37,17 @@ export const getSchedules = async (req, res) => {
   try {
     const schedules = await prisma.schedule.findMany({
       include: {
-        bus: { select: { busNumber: true } },
+        bus: { 
+          select: { 
+            busNumber: true,
+            driverName: true,
+            driverContact: true 
+          } 
+        },
         source: { select: { name: true } },
         dest: { select: { name: true } }
       },
-      orderBy: { departureTime: 'asc' } // Orders them chronologically
+      orderBy: { departureTime: 'asc' }
     });
     res.status(200).json(schedules);
   } catch (error) {

@@ -1,5 +1,5 @@
 import express from 'express';
-import { createProduct, getProducts, expressInterest, markAsSold, deleteProduct } from '../controllers/product.controller.js';
+import { createProduct, getProducts, getProductById, expressInterest, markAsSold, deleteProduct } from '../controllers/product.controller.js';
 import { verifyToken } from '../middleware/auth.middleware.js';
 import { upload } from '../middleware/upload.middleware.js';
 
@@ -7,6 +7,9 @@ const router = express.Router();
 
 // GET /api/products (Marketplace feed - Logged in students only)
 router.get('/', verifyToken, getProducts);
+
+// GET /api/products/:id (Get single product by ID)
+router.get('/:id', verifyToken, getProductById);
 
 // POST /api/products (Create a listing)
 router.post('/', verifyToken, upload.array('images', 5), createProduct);

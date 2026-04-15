@@ -102,3 +102,46 @@ Keep this cheat sheet handy. You will use these commands daily.
 * **Stop everything**: `docker-compose down` (in root)
 * **View Backend Logs**: `docker-compose logs -f backend`
 * **Reset Database completely**: `docker exec -it campus_backend npx prisma migrate reset --force`
+* **Re-seed bus schedule** (after editing `real-schedule.json`): `docker-compose exec backend node seed-location.js`
+* **Open Prisma Studio** (visual DB browser at `http://localhost:5555`): `docker-compose exec backend npx prisma studio`
+* **Run database migrations**: `docker-compose exec backend npx prisma migrate deploy`
+
+---
+
+## 🚌 Driver App Setup (Expo / React Native)
+
+The driver app streams live GPS telemetry to the backend over WebSockets.
+
+### Configure the server URL
+Create a `.env` file inside the `driver-app/` folder (use `.env.example` as a template):
+```bash
+# driver-app/.env
+EXPO_PUBLIC_API_URL=http://<your-local-ip>:5000
+```
+> Replace `<your-local-ip>` with your computer's LAN IP (e.g. `192.168.1.42`).
+> The phone and computer must be on the same Wi-Fi network.
+
+### Run the app
+```bash
+cd driver-app
+npm install
+npx expo start
+```
+Scan the QR code with the **Expo Go** app on the driver's phone.
+
+---
+
+## 🗺️ Bus Map — How it Works
+
+The campus map shows estimated bus positions even when a driver is not actively streaming GPS. The frontend uses **dead reckoning**:
+
+1. **🟠 Live GPS** — Driver app is actively streaming. Bus marker pulses orange.
+2. **🔵 Estimated** — No live signal, but bus is mid-trip or waiting for an upcoming departure (within 60 min). Position is interpolated between stops based on elapsed time and known route durations.
+3. **⚫ No Active Trip** — Bus has no scheduled trip nearby. No marker shown.
+
+### Approximate campus route durations (used for estimation)
+| Route | Time |
+|---|---|
+| Aryabhatta ↔ Tut Block | ~10 min |
+| Aryabhatta ↔ D Quarters | ~8 min |
+| Aryabhatta ↔ Bihar Museum (Patna) | ~150 min (2.5 hr) |

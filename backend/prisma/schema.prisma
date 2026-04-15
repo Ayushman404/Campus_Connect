@@ -80,6 +80,9 @@ model Bus {
   currentDriverId String?    @unique
   lastUpdated     DateTime   @updatedAt
   
+  driverName      String?
+  driverContact   String?
+  
   schedules       Schedule[] 
 }
 
@@ -105,6 +108,8 @@ model Schedule {
   
   destId        Int
   dest          BusStop  @relation("DestStop", fields: [destId], references: [id])
+  
+  dayType       String   @default("WEEKDAY")
 }
 
 model Product {

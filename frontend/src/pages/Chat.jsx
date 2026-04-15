@@ -19,7 +19,7 @@ export default function Chat() {
   useEffect(() => {
     const newSocket = io('http://localhost:5000');
     setSocket(newSocket);
-    
+
     if (user) {
       newSocket.emit('subscribeToNotifications', user.id);
     }
@@ -35,7 +35,7 @@ export default function Chat() {
       const data = await res.json();
       if (res.ok) {
         setConversations(data);
-        
+
         // deep linking
         const params = new URLSearchParams(location.search);
         const chatId = params.get('id');
@@ -106,21 +106,21 @@ export default function Chat() {
     <div className="flex bg-surface h-[calc(100vh-6rem)] overflow-hidden relative">
       {/* Background Organic Blobs */}
       <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-secondary/10 organic-blob blur-3xl rounded-full pointer-events-none -z-10"></div>
-      
+
       {!activeChat ? (
         /* CONVERSATION LIST (INBOX) */
         <div className="flex-1 max-w-4xl mx-auto flex flex-col h-full overflow-hidden px-6">
           <div className="py-8 md:py-12 border-b-2 border-on-surface/10 flex items-end justify-between shrink-0">
             <div>
               <h2 className="text-4xl md:text-5xl font-black text-on-surface tracking-tighter uppercase leading-none">
-                Dispatch <br/> Inbox
+                Dispatch <br /> Inbox
               </h2>
             </div>
             <span className="font-black text-xl md:text-2xl tracking-tighter text-on-surface-variant">
               ({conversations.length.toString().padStart(2, '0')})
             </span>
           </div>
-          
+
           <div className="flex-1 overflow-y-auto py-8 space-y-4 custom-scrollbar">
             {conversations.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-20 opacity-30 text-center">
@@ -132,8 +132,8 @@ export default function Chat() {
                 const otherUser = chat.buyerId === user.id ? chat.seller : chat.buyer;
                 const lastMsg = chat.messages?.[0];
                 return (
-                  <div 
-                    key={chat.id} 
+                  <div
+                    key={chat.id}
                     onClick={() => selectChat(chat)}
                     className="p-6 bg-surface-container-lowest border border-surface-container rounded-2xl cursor-pointer transition-all hover:bg-surface-container-low flex flex-col sm:flex-row items-center gap-6 group"
                   >
@@ -163,10 +163,10 @@ export default function Chat() {
       ) : (
         /* ACTIVE CHAT LAYOUT: [PRODUCT INFO | CHAT MESSAGES] */
         <div className="flex-1 flex flex-col md:flex-row h-full overflow-hidden">
-          
+
           {/* LEFT PANEL: PRODUCT DETAILS (Desktop Only or Toggle) */}
           <div className="hidden md:flex md:w-80 lg:w-96 border-r-2 border-on-surface/5 bg-surface-container-lowest flex-col p-6 overflow-y-auto custom-scrollbar shrink-0">
-            <button 
+            <button
               onClick={() => setActiveChat(null)}
               className="flex items-center gap-2 text-on-surface-variant font-black uppercase text-[10px] tracking-widest hover:text-primary mb-8 transition-colors group shrink-0"
             >
@@ -177,10 +177,10 @@ export default function Chat() {
             <div className="space-y-6">
               <div className="aspect-square bg-surface-container rounded-2xl overflow-hidden border border-outline-variant/30 flex items-center justify-center shrink-0">
                 {activeChat.product?.images?.[0] ? (
-                  <img 
-                    src={activeChat.product.images[0].startsWith('http') ? activeChat.product.images[0] : `http://localhost:5000${activeChat.product.images[0]}`} 
-                    className="w-full h-full object-cover" 
-                    alt={activeChat.product.title} 
+                  <img
+                    src={activeChat.product.images[0].startsWith('http') ? activeChat.product.images[0] : `http://localhost:5000${activeChat.product.images[0]}`}
+                    className="w-full h-full object-cover"
+                    alt={activeChat.product.title}
                   />
                 ) : (
                   <span className="material-symbols-outlined text-4xl opacity-30">image_not_supported</span>
@@ -192,9 +192,9 @@ export default function Chat() {
                 <div className="flex items-center gap-2 text-primary font-black text-xl mb-6">
                   <span>₹{activeChat.product?.price}</span>
                 </div>
-                
+
                 <div className="h-0.5 bg-outline-variant/30 w-full mb-6"></div>
-                
+
                 <label className="text-[10px] font-black text-on-surface-variant uppercase tracking-widest mb-2 block">Context Details</label>
                 <div className="text-on-surface-variant text-sm font-medium leading-relaxed bg-surface-container-low p-4 rounded-xl border border-outline-variant/30 whitespace-pre-wrap max-h-48 overflow-y-auto custom-scrollbar">
                   {activeChat.product?.description || 'No description provided.'}
@@ -220,47 +220,46 @@ export default function Chat() {
           <div className="flex-1 flex flex-col bg-surface relative overflow-hidden">
             {/* CHAT HEADER */}
             <div className="p-4 bg-surface-container-lowest border-b-2 border-on-surface/5 flex items-center justify-between shadow-sm z-10">
-               <div className="flex items-center gap-4">
-                 <button onClick={() => setActiveChat(null)} className="md:hidden">
-                    <ChevronLeft className="w-6 h-6 text-on-surface-variant hover:text-primary transition-colors" />
-                 </button>
-                 <div className="h-10 w-10 bg-surface-container-highest rounded-full flex items-center justify-center text-primary font-black border border-outline-variant/50 shrink-0">
-                   {(activeChat.buyerId === user.id ? activeChat.seller : activeChat.buyer)?.name?.charAt(0)}
-                 </div>
-                 <div className="flex flex-col">
-                   <span className="font-black text-on-surface uppercase tracking-tight text-sm leading-none">
-                     {(activeChat.buyerId === user.id ? activeChat.seller : activeChat.buyer)?.name}
-                   </span>
-                   <span className="text-[9px] font-bold text-primary uppercase tracking-widest mt-1">Active Transmission</span>
-                 </div>
-               </div>
-               
-               <button 
-                 onClick={() => setActiveChat(null)}
-                 className="hidden md:flex items-center justify-center w-10 h-10 rounded-full hover:bg-surface-container-high transition-colors text-on-surface-variant"
-                 title="Close Chat"
-               >
-                 <ChevronLeft className="w-5 h-5" />
-               </button>
+              <div className="flex items-center gap-4">
+                <button onClick={() => setActiveChat(null)} className="md:hidden">
+                  <ChevronLeft className="w-6 h-6 text-on-surface-variant hover:text-primary transition-colors" />
+                </button>
+                <div className="h-10 w-10 bg-surface-container-highest rounded-full flex items-center justify-center text-primary font-black border border-outline-variant/50 shrink-0">
+                  {(activeChat.buyerId === user.id ? activeChat.seller : activeChat.buyer)?.name?.charAt(0)}
+                </div>
+                <div className="flex flex-col">
+                  <span className="font-black text-on-surface uppercase tracking-tight text-sm leading-none">
+                    {(activeChat.buyerId === user.id ? activeChat.seller : activeChat.buyer)?.name}
+                  </span>
+                  <span className="text-[9px] font-bold text-primary uppercase tracking-widest mt-1">Active Transmission</span>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setActiveChat(null)}
+                className="hidden md:flex items-center justify-center w-10 h-10 rounded-full hover:bg-surface-container-high transition-colors text-on-surface-variant"
+                title="Close Chat"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
             </div>
 
             {/* MESSAGE THREAD */}
             <div className="flex-1 overflow-y-auto p-6 md:p-10 space-y-6 flex flex-col custom-scrollbar">
               {messages.length === 0 && (
                 <div className="flex-1 flex flex-col items-center justify-center opacity-30 py-12">
-                   <Mail className="w-12 h-12 mb-4" />
-                   <p className="font-bold uppercase tracking-widest text-xs text-center">Empty transcript.<br/>Begin correspondence below.</p>
+                  <Mail className="w-12 h-12 mb-4" />
+                  <p className="font-bold uppercase tracking-widest text-xs text-center">Empty transcript.<br />Begin correspondence below.</p>
                 </div>
               )}
               {messages.map((msg, i) => {
                 const isMine = msg.senderId === user.id;
                 return (
                   <div key={i} className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-[75%] px-5 py-4 rounded-2xl text-sm font-medium leading-relaxed shadow-sm transition-all duration-300 animate-in fade-in slide-in-from-bottom-2 ${
-                      isMine 
-                        ? 'bg-primary text-on-primary rounded-br-none' 
+                    <div className={`max-w-[75%] px-5 py-4 rounded-2xl text-sm font-medium leading-relaxed shadow-sm transition-all duration-300 animate-in fade-in slide-in-from-bottom-2 ${isMine
+                        ? 'bg-primary text-on-primary rounded-br-none'
                         : 'bg-surface-container-highest text-on-surface border border-outline-variant/30 rounded-bl-none'
-                    }`}>
+                      }`}>
                       {msg.text}
                       <p className={`text-[8px] mt-2 font-black uppercase tracking-widest text-right ${isMine ? 'text-on-primary/60' : 'text-on-surface-variant/60'}`}>
                         {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -275,14 +274,14 @@ export default function Chat() {
             {/* INPUT AREA */}
             <div className="p-6 md:p-8 border-t-2 border-on-surface/5 bg-surface-bright shrink-0">
               <form onSubmit={handleSendMessage} className="bg-surface-container p-2 rounded-2xl flex items-center gap-2 pr-2 border border-outline-variant/30 focus-within:border-primary/50 transition-colors">
-                <input 
-                  type="text" 
-                  placeholder="Draft transmission..." 
+                <input
+                  type="text"
+                  placeholder="Draft transmission..."
                   className="flex-1 bg-transparent px-4 py-3 text-sm focus:ring-0 outline-none font-semibold text-on-surface placeholder:text-on-surface-variant/50 border-none"
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
                 />
-                <button 
+                <button
                   type="submit"
                   disabled={!newMessage.trim()}
                   className="w-12 h-12 flex items-center justify-center bg-primary text-on-primary rounded-xl hover:bg-[#842500] active:scale-95 transition-all disabled:opacity-30 shadow-md"

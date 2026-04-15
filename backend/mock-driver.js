@@ -30,7 +30,7 @@ socket.on('connect', () => {
     const [lat, lng] = campusRoute[currentIndex];
     
     const payload = {
-      busId: 'IITP-BUS-01',
+      busId: 'BR01PM6850', // Matches Bus 01 in the real schedule
       lat: lat,
       lng: lng,
       timestamp: new Date().toISOString()
