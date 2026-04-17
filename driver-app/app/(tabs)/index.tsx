@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, TextInput, TouchableOpacity } from "react-native";
 import * as Location from "expo-location";
 import { io } from "socket.io-client";
 import { useRef, useEffect, useState } from "react";
@@ -11,116 +11,112 @@ const socket = io(API_URL, {
 });
 
 export default function HomeScreen() {
-
   const trackingRef = useRef<any>(null);
 
-  const [status, setStatus] = useState("Connecting...");
+  const [busId, setBusId] = useState("");
+  const [isTracking, setIsTracking] = useState(false);
+  const [status, setStatus] = useState("Disconnected");
   const [coords, setCoords] = useState<any>(null);
-  const [timestamp, setTimestamp] = useState("");
 
-  async function startTracking() {
+  async function toggleTracking() {
+    if (isTracking) {
+      // Stop tracking
+      if (trackingRef.current) {
+        trackingRef.current.remove();
+        trackingRef.current = null;
+      }
+      setIsTracking(false);
+      setStatus("Tracking Stopped");
+      return;
+    }
 
-    if (trackingRef.current) return;
+    if (!busId.trim()) {
+      setStatus("Please enter your Bus Number");
+      return;
+    }
 
-    const { status } = await Location.requestForegroundPermissionsAsync();
-
-    if (status !== "granted") {
+    const { status: permStatus } = await Location.requestForegroundPermissionsAsync();
+    if (permStatus !== "granted") {
       setStatus("Location Permission Denied");
       return;
     }
 
-    setStatus("Sending Location");
+    setIsTracking(true);
+    setStatus("Sending Live Location...");
 
     trackingRef.current = await Location.watchPositionAsync(
       {
         accuracy: Location.Accuracy.High,
-        timeInterval: 1000,
-        distanceInterval: 0
+        timeInterval: 2000,
+        distanceInterval: 5
       },
       (location) => {
-
         const payload = {
-          busId: "BR01PM6850", // Matches Bus 01 in the real schedule
+          busId: busId.trim().toUpperCase(),
           lat: location.coords.latitude,
           lng: location.coords.longitude,
           timestamp: new Date().toISOString()
         };
 
-        setCoords({
-          lat: payload.lat,
-          lng: payload.lng
-        });
-
-        setTimestamp(payload.timestamp);
-
-        console.log("Sending:", payload);
-
+        setCoords({ lat: payload.lat, lng: payload.lng });
         socket.emit("driverLocationUpdate", payload);
       }
     );
   }
 
+  // Cleanup to prevent memory leaks if app closes
   useEffect(() => {
-    startTracking();
+    return () => {
+      if (trackingRef.current) {
+        trackingRef.current.remove();
+      }
+    };
   }, []);
 
   return (
     <View style={styles.container}>
+      <Text style={styles.title}>Transit Telemetry</Text>
+      
+      {!isTracking && (
+        <TextInput 
+          style={styles.input}
+          placeholder="Enter Bus Number (e.g. BR01PM6850)"
+          value={busId}
+          onChangeText={setBusId}
+          autoCapitalize="characters"
+        />
+      )}
 
-      <Text style={styles.title}>Driver Tracking App</Text>
+      <TouchableOpacity 
+        style={[styles.button, isTracking ? styles.stopButton : styles.startButton]} 
+        onPress={toggleTracking}
+      >
+        <Text style={styles.buttonText}>{isTracking ? "Stop Tracking" : "Start Tracking"}</Text>
+      </TouchableOpacity>
 
-      <Text style={styles.status}>
+      <Text style={[styles.status, { color: isTracking ? "green" : "gray" }]}>
         Status: {status}
       </Text>
 
-      {coords && (
-        <>
-          <Text style={styles.coords}>
-            Latitude: {coords.lat}
-          </Text>
-
-          <Text style={styles.coords}>
-            Longitude: {coords.lng}
-          </Text>
-
-          <Text style={styles.time}>
-            Last Update: {timestamp}
-          </Text>
-        </>
+      {coords && isTracking && (
+        <View style={styles.coordsContainer}>
+          <Text style={styles.coords}>Lat: {coords.lat.toFixed(5)}</Text>
+          <Text style={styles.coords}>Lng: {coords.lng.toFixed(5)}</Text>
+        </View>
       )}
-
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex:1,
-    justifyContent:"center",
-    alignItems:"center",
-    backgroundColor:"#f4f6f8"
-  },
-
-  title: {
-    fontSize:24,
-    fontWeight:"bold",
-    marginBottom:20
-  },
-
-  status: {
-    fontSize:18,
-    color:"green",
-    marginBottom:15
-  },
-
-  coords: {
-    fontSize:16,
-    marginBottom:5
-  },
-
-  time: {
-    fontSize:14,
-    color:"gray",
-    marginTop:10
-  }
+  container: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#f4f6f8", padding: 20 },
+  title: { fontSize: 26, fontWeight: "bold", marginBottom: 30 },
+  input: { width: "100%", height: 50, backgroundColor: "#fff", borderRadius: 8, paddingHorizontal: 15, fontSize: 16, marginBottom: 20, borderWidth: 1, borderColor: "#ccc" },
+  button: { width: "100%", height: 50, borderRadius: 8, justifyContent: "center", alignItems: "center", marginBottom: 20 },
+  startButton: { backgroundColor: "#007BFF" },
+  stopButton: { backgroundColor: "#FF3B30" },
+  buttonText: { color: "#fff", fontSize: 18, fontWeight: "bold" },
+  status: { fontSize: 16, marginBottom: 15 },
+  coordsContainer: { marginTop: 20, alignItems: "center" },
+  coords: { fontSize: 16, color: "#555", marginVertical: 2 }
 });
