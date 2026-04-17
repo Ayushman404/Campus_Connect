@@ -141,32 +141,20 @@ const CampusMap = ({ selectedBus, liveBuses = EMPTY_LIVE, allSchedules = EMPTY_S
   const [mapCenter, setMapCenter] = useState(IIT_CENTER);
   const [mapZoom,   setMapZoom]   = useState(15);
 
-  // Build a combined position map: real GPS first, fall back to dead-reckoning.
   const busPositions = useMemo(() => {
     const positions = {};
 
-    // 1. Seed with live GPS positions
+    // Only seed with verified live GPS positions
     Object.entries(liveBuses).forEach(([id, info]) => {
       if (info?.lat && info?.lng) {
         positions[id] = { ...info, estimated: false };
       }
     });
 
-    // 2. For every bus in today's schedule that has NO live position, estimate
-    const day = new Date().getDay();
-    const dayType = (day === 0 || day === 6) ? 'WEEKEND' : 'WEEKDAY';
-    const todayBusIds = [...new Set(
-      allSchedules.filter(s => s.dayType === dayType).map(s => s.bus.busNumber)
-    )];
-
-    todayBusIds.forEach(busId => {
-      if (positions[busId]) return; // already have live GPS
-      const est = getEstimatedPosition(busId, allSchedules);
-      if (est) positions[busId] = est;
-    });
+    // Removed the "Pass 2" loop that generated estimated/dummy positions
 
     return positions;
-  }, [liveBuses, allSchedules]);
+  }, [liveBuses]);
 
   // Fly to selected bus when it changes
   useEffect(() => {
