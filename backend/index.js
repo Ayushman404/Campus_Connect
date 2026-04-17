@@ -101,19 +101,20 @@ io.on('connection', (socket) => {
   socket.emit('initialBusLocations', activeBuses);
 
   socket.on('driverLocationUpdate', async (data) => {
-    // Cache the latest location for future connections
     activeBuses[data.busId] = data;
 
-    // 1. FAST PATH: Broadcast to React UI immediately (2s interval)
+    // 1. FAST PATH: Broadcast to React UI immediately 
     socket.broadcast.emit('busMoved', data);
 
-    // 2. SLOW PATH: Database Persistence
+    // 2. SLOW PATH: Database Persistence (Throttled)
     const now = Date.now();
     const lastUpdate = lastDbUpdate[data.busId] || 0;
 
     if (now - lastUpdate > DB_UPDATE_INTERVAL) {
       try {
-        await prisma.bus.update({
+        // CHANGED: Use updateMany instead of update. 
+        // If the busId isn't in the DB, it safely updates 0 records without throwing an error.
+        await prisma.bus.updateMany({
           where: { busNumber: data.busId },
           data: { 
             lat: data.lat, 
