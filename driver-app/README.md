@@ -35,13 +35,13 @@ driver-app/app/(tabs)/index.tsx
 Update this line with your **local machine IP**:
 
 ```
-const socket = io("http://YOUR_IP:5000")
+const API_URL = process.env.EXPO_PUBLIC_API_URL || "http://YOUR_IP:5000";
 ```
 
 Example:
 
 ```
-const socket = io("http://192.168.1.20:5000")
+const API_URL = process.env.EXPO_PUBLIC_API_URL || "http://192.172.3.69:5000";
 ```
 
 Find your IP with:

@@ -3,7 +3,7 @@ import * as Location from "expo-location";
 import { io } from "socket.io-client";
 import { useRef, useEffect, useState } from "react";
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL || "http://192.168.29.130:5000";
+const API_URL = process.env.EXPO_PUBLIC_API_URL || "http://192.172.3.69:5000";
 
 const socket = io(API_URL, {
   transports: ["websocket"],

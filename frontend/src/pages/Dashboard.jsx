@@ -1,11 +1,14 @@
+// frontend/src/pages/Dashboard.jsx
 import React, { useState, useEffect } from 'react';
 import CampusMap from '../components/CampusMap';
 import BusSchedule from '../components/BusSchedule';
 import BusDetail from '../components/BusDetail';
+import socket from '../lib/socket'; // 1. Import your socket instance
 
 function Dashboard() {
   const [selectedBus, setSelectedBus] = useState(null);
   const [schedules, setSchedules] = useState([]);
+  const [liveBuses, setLiveBuses] = useState({}); // 2. Add state for live buses
 
   useEffect(() => {
     const fetchSchedules = async () => {
@@ -20,6 +23,35 @@ function Dashboard() {
       }
     };
     fetchSchedules();
+
+    // --- 3. SOCKET LISTENERS FOR LIVE TRACKING ---
+    
+    // Receive initial locations upon connection
+    socket.on('initialBusLocations', (data) => {
+      // Convert initial data to ensure it has the lastUpdated timestamp needed by CampusMap
+      const mappedData = {};
+      Object.keys(data).forEach(key => {
+        mappedData[key] = { ...data[key], lastUpdated: Date.now() };
+      });
+      setLiveBuses(mappedData);
+    });
+
+    // Listen for live movements from the driver app
+    socket.on('busMoved', (data) => {
+      setLiveBuses(prev => ({
+        ...prev,
+        [data.busId]: { 
+          ...data, 
+          lastUpdated: Date.now() // CampusMap.jsx uses this to determine if the signal is fresh (< 5 mins)
+        }
+      }));
+    });
+
+    // Cleanup listeners when component unmounts
+    return () => {
+      socket.off('initialBusLocations');
+      socket.off('busMoved');
+    };
   }, []);
 
   return (
@@ -31,7 +63,13 @@ function Dashboard() {
             {selectedBus ? `Tracking Live • ${selectedBus.busNumber || selectedBus.id}` : 'Live Transit • Campus'}
           </p>
         </div>
-        <CampusMap selectedBus={selectedBus} allSchedules={schedules} />
+        
+        {/* 4. Pass the liveBuses state to CampusMap */}
+        <CampusMap 
+          selectedBus={selectedBus} 
+          allSchedules={schedules} 
+          liveBuses={liveBuses} 
+        />
 
         {/* Map Legend — floating overlay, always visible on all screen sizes */}
         <div className="absolute bottom-10 right-3 z-[400] pointer-events-none bg-surface/90 backdrop-blur-md rounded-xl px-3 py-2 border border-on-surface/5 shadow-lg flex flex-col gap-1.5">
