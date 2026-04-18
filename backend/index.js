@@ -112,14 +112,23 @@ io.on('connection', (socket) => {
 
     if (now - lastUpdate > DB_UPDATE_INTERVAL) {
       try {
-        // CHANGED: Use updateMany instead of update. 
-        // If the busId isn't in the DB, it safely updates 0 records without throwing an error.
-        await prisma.bus.updateMany({
+        await prisma.bus.upsert({
           where: { busNumber: data.busId },
-          data: { 
+          update: { 
             lat: data.lat, 
             lng: data.lng,
+            driverName: data.driverName,
+            driverContact: data.driverPhone,
+            status: 'ACTIVE',
             lastUpdated: new Date()
+          },
+          create: {
+            busNumber: data.busId,
+            lat: data.lat,
+            lng: data.lng,
+            driverName: data.driverName,
+            driverContact: data.driverPhone,
+            status: 'ACTIVE'
           }
         });
         

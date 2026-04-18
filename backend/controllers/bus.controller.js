@@ -55,3 +55,16 @@ export const getSchedules = async (req, res) => {
     res.status(500).json({ message: 'Failed to fetch schedules' });
   }
 };
+
+// 4. Registration: Get all available bus numbers for driver selection
+export const getAllBuses = async (req, res) => {
+  try {
+    const buses = await prisma.bus.findMany({
+      select: { busNumber: true }
+    });
+    res.status(200).json(buses);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Failed to fetch all buses' });
+  }
+};
