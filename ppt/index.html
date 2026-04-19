@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Campus Connect | IIT Patna Unified Platform</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Space+Grotesk:wght@300;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #3b82f6;
+            --secondary: #10b981;
+            --bg: #030712;
+            --card-bg: #111827;
+            --text: #f9fafb;
+            --text-dim: #9ca3af;
+            --accent: #f97316;
+            --gradient: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            --glass: rgba(255, 255, 255, 0.03);
+            --border: rgba(255, 255, 255, 0.08);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        h1, h2, h3, h4 { font-family: 'Space Grotesk', sans-serif; text-transform: uppercase; letter-spacing: -0.01em; }
+
+        .presentation-container {
+            position: relative;
+            height: 100vh;
+            width: 100vw;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .slide {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 4rem;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .slide.active {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: all;
+            z-index: 10;
+        }
+
+        .hero-title {
+            font-size: 6rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-align: center;
+            line-height: 1;
+        }
+
+        .slide-header {
+            width: 100%;
+            max-width: 1100px;
+            margin-bottom: 3rem;
+            text-align: left;
+        }
+
+        .slide-title { font-size: 3.5rem; font-weight: 800; margin-bottom: 0.5rem; }
+        .slide-subtitle { color: var(--primary); font-weight: 700; text-transform: uppercase; letter-spacing: 0.2em; font-size: 1.2rem; }
+
+        .content-box {
+            background: var(--card-bg);
+            padding: 3rem;
+            border-radius: 24px;
+            border: 1px solid var(--border);
+            width: 100%;
+            max-width: 1100px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .content-box h3 { color: var(--primary); margin-bottom: 1.5rem; font-size: 2rem; }
+        .content-box p { color: var(--text-dim); line-height: 1.7; font-size: 1.2rem; margin-bottom: 1.5rem; }
+
+        .feature-item {
+            display: flex;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+            align-items: flex-start;
+        }
+
+        .feature-icon {
+            background: rgba(59, 130, 246, 0.1);
+            padding: 1rem;
+            border-radius: 12px;
+            color: var(--primary);
+            font-weight: 900;
+        }
+
+        .controls {
+            position: fixed;
+            bottom: 3rem;
+            right: 4rem;
+            display: flex;
+            gap: 1rem;
+            z-index: 100;
+        }
+
+        .control-btn {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            color: #fff;
+            width: 3.5rem;
+            height: 3.5rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .control-btn:hover {
+            background: var(--primary);
+            border-color: var(--primary);
+            transform: scale(1.1);
+        }
+
+        .progress-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            height: 4px;
+            background: var(--gradient);
+            transition: width 0.3s ease;
+            z-index: 101;
+        }
+
+        .highlight { color: var(--primary); font-weight: 700; }
+        
+        .tech-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            width: 100%;
+        }
+
+        .tech-card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--border);
+            padding: 1.5rem;
+            border-radius: 16px;
+        }
+
+        .tech-card h4 { color: var(--primary); margin-bottom: 0.5rem; font-size: 1rem; }
+        .tech-card p { font-size: 0.9rem; color: var(--text-dim); margin-bottom: 0; }
+
+    </style>
+</head>
+<body>
+
+    <div class="progress-bar" id="progress"></div>
+
+    <div class="presentation-container">
+        
+        <!-- Slide 1: Welcome -->
+        <section class="slide active" id="slide-1">
+            <h1 class="hero-title">Campus Connect</h1>
+            <p style="font-size: 1.5rem; color: var(--text-dim); letter-spacing: 0.1em; font-weight: 500;">TRANSIT • COMMERCE • COMMUNITY</p>
+            <p style="margin-top: 2rem; color: var(--primary); font-weight: 800; text-transform: uppercase; letter-spacing: 0.3em;">IIT Patna Unified Platform</p>
+        </section>
+
+        <!-- Slide 2: Live Tracking (Student Context) -->
+        <section class="slide" id="slide-2">
+            <div class="slide-header">
+                <p class="slide-subtitle">Student Experience</p>
+                <h2 class="slide-title">Live Campus Tracking</h2>
+            </div>
+            <div class="content-box">
+                <h3>Real-Time Visibility</h3>
+                <p>Students can see exactly where every active bus is on the campus map. No more waiting blindly at the bus stop or missing the last trip.</p>
+                
+                <div class="feature-item">
+                    <div class="feature-icon">★</div>
+                    <div>
+                        <h4 style="color: #fff;">Pulse of the Campus</h4>
+                        <p style="font-size: 1rem; margin-bottom: 0;">Live bus markers update instantly on the map. You see every turn and movement as it happens in real-world time.</p>
+                    </div>
+                </div>
+
+                <div class="feature-item">
+                    <div class="feature-icon">★</div>
+                    <div>
+                        <h4 style="color: #fff;">Direct Communication</h4>
+                        <p style="font-size: 1rem; margin-bottom: 0;">Need to check if the bus is full? Access the driver's contact info directly from the map info card for instant clarity.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Slide 3: The Driver App -->
+        <section class="slide" id="slide-3">
+            <div class="slide-header">
+                <p class="slide-subtitle">Behind the Scenes</p>
+                <h2 class="slide-title">Empowering the Drivers</h2>
+            </div>
+            <div class="content-box">
+                <h3>Effortless Location Sharing</h3>
+                <p>The system is designed for maximum simplicity. Drivers don't need to log in repeatedly—the app remembers their profile permanently.</p>
+                
+                <div class="feature-item">
+                    <div class="feature-icon">✔</div>
+                    <div>
+                        <h4 style="color: #fff;">Persistent Profile</h4>
+                        <p style="font-size: 1rem; margin-bottom: 0;">One-time registration saves the driver's name and bus number securely on their device.</p>
+                    </div>
+                </div>
+
+                <div class="feature-item">
+                    <div class="feature-icon">✔</div>
+                    <div>
+                        <h4 style="color: #fff;">One-Tap Streaming</h4>
+                        <p style="font-size: 1rem; margin-bottom: 0;">A single button to start or stop sharing location. Minimal distraction for safe driving.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Slide 4: Tracking Tech (Driver Focus) -->
+        <section class="slide" id="slide-4">
+            <div class="slide-header">
+                <p class="slide-subtitle">Engineering the Bridge</p>
+                <h2 class="slide-title">The Tracking Engine</h2>
+            </div>
+            <div class="content-box">
+                <h3>High-Performance Data Flow</h3>
+                <div class="tech-grid">
+                    <div class="tech-card">
+                        <h4>Instant Data Link</h4>
+                        <p>We established a continuous "Live Bridge" between the driver app and our servers. This allows for zero-lag updates without the overhead of traditional polling.</p>
+                    </div>
+                    <div class="tech-card">
+                        <h4>Precision GPS Capture</h4>
+                        <p>Configured with High Accuracy mode, capturing sub-meter movements every 2 seconds to ensure the map matches the real world perfectly.</p>
+                    </div>
+                    <div class="tech-card">
+                        <h4>Local Persistence</h4>
+                        <p>Uses <code>AsyncStorage</code> to keep drivers logged in 24/7, even after device reboots, ensuring the system is always ready to stream.</p>
+                    </div>
+                    <div class="tech-card">
+                        <h4>Smart Rendering</h4>
+                        <p>Optimized map overlays ensure smooth movement of multiple buses simultaneously without draining the student's battery.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Slide 5: Marketplace Intro -->
+        <section class="slide" id="slide-5">
+            <div class="slide-header">
+                <p class="slide-subtitle">Student Marketplace</p>
+                <h2 class="slide-title">Buy, Sell, or Rent</h2>
+            </div>
+            <div class="content-box">
+                <h3>The Campus Bazaar</h3>
+                <p>A dedicated space for students to trade essentials like books, cycles, and electronics within the trusted IITP community.</p>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+                    <div style="background: rgba(59, 130, 246, 0.1); padding: 2rem; border-radius: 12px; border: 1px solid var(--border);">
+                        <h4 style="color: var(--primary); margin-bottom: 0.5rem; font-size: 1.5rem;">Sell Items</h4>
+                        <p style="font-size: 1rem;">Turn your old gear into cash instantly by reaching thousands of peers.</p>
+                    </div>
+                    <div style="background: rgba(16, 185, 129, 0.1); padding: 2rem; border-radius: 12px; border: 1px solid var(--border);">
+                        <h4 style="color: var(--secondary); margin-bottom: 0.5rem; font-size: 1.5rem;">Rent Gear</h4>
+                        <p style="font-size: 1rem;">Perfect for items you only need for a few weeks or a single semester.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Slide 6: How to Sell -->
+        <section class="slide" id="slide-6">
+            <div class="slide-header">
+                <p class="slide-subtitle">Step-by-Step</p>
+                <h2 class="slide-title">List in Seconds</h2>
+            </div>
+            <div class="content-box">
+                <h3>Publishing Your Artifact</h3>
+                <div class="feature-item">
+                    <div class="feature-icon">1</div>
+                    <div>
+                        <h4 style="color: #fff;">Snap & Showcase</h4>
+                        <p style="font-size: 1.1rem; margin-bottom: 0;">Upload up to 5 clear photos. You can even choose which one looks best as your main cover.</p>
+                    </div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">2</div>
+                    <div>
+                        <h4 style="color: #fff;">Set Your Terms</h4>
+                        <p style="font-size: 1.1rem; margin-bottom: 0;">Choose your price and whether you're selling or renting. Add a quick description and you're live.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Slide 7: Deal Closing -->
+        <section class="slide" id="slide-7">
+            <div class="slide-header">
+                <p class="slide-subtitle">Manage Your Deals</p>
+                <h2 class="slide-title">Close the Deal</h2>
+            </div>
+            <div class="content-grid" style="grid-template-columns: 1fr 1fr; max-width: 1100px;">
+                <div class="content-box" style="padding: 2.5rem;">
+                    <h3>Instant Communication</h3>
+                    <p style="font-size: 1.1rem;">Negotiate and coordinate handovers with the <span class="highlight">built-in messaging engine</span>. Fast, secure, and private.</p>
+                </div>
+                <div class="content-box" style="padding: 2.5rem;">
+                    <h3>One-Tap Actions</h3>
+                    <p style="font-size: 1.1rem; margin-bottom: 1rem;"><span class="highlight">Mark as Sold:</span> Instantly archive the item and clear your feed.</p>
+                    <p style="font-size: 1.1rem;"><span class="highlight">Unlist:</span> Take your item off the market temporarily with a single tap.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Slide 8: Marketplace Tech -->
+        <section class="slide" id="slide-8">
+            <div class="slide-header">
+                <p class="slide-subtitle">Behind the Marketplace</p>
+                <h2 class="slide-title">The Commerce Engine</h2>
+            </div>
+            <div class="content-box">
+                <h3>How it Works</h3>
+                <div class="tech-grid">
+                    <div class="tech-card">
+                        <h4>Atomic State Updates</h4>
+                        <p>When you mark an item as "Sold", the system performs an atomic database transaction to update stock and archive the listing simultaneously.</p>
+                    </div>
+                    <div class="tech-card">
+                        <h4>Image Orchestration</h4>
+                        <p>Handles multiple high-res uploads and dynamically serves them across the app, ensuring the marketplace stays fast and visually rich.</p>
+                    </div>
+                    <div class="tech-card">
+                        <h4>Messaging Bridge</h4>
+                        <p>Powered by an instant data link that delivers messages the moment they are sent, ensuring smooth negotiations.</p>
+                    </div>
+                    <div class="tech-card">
+                        <h4>Safe Selection</h4>
+                        <p>The backend is built to only share necessary public data, keeping user's sensitive info (like passwords) completely locked away.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Slide 9: Tech Stack -->
+        <section class="slide" id="slide-9">
+            <div class="slide-header">
+                <p class="slide-subtitle">The Engineering Foundation</p>
+                <h2 class="slide-title">Modern Tech Stack</h2>
+            </div>
+            <div class="content-box" style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+                <div>
+                    <h4 style="color: var(--primary); margin-bottom: 1rem; font-size: 1.2rem;">Web & UI</h4>
+                    <p style="font-size: 1.1rem;">React 18, Vite, Tailwind CSS</p>
+                    <h4 style="color: var(--secondary); margin-bottom: 1rem; margin-top: 2rem; font-size: 1.2rem;">Mobile</h4>
+                    <p style="font-size: 1.1rem;">Expo, React Native</p>
+                </div>
+                <div>
+                    <h4 style="color: var(--accent); margin-bottom: 1rem; font-size: 1.2rem;">Backend & Data</h4>
+                    <p style="font-size: 1.1rem;">Node.js, Express, PostgreSQL, Prisma</p>
+                    <h4 style="color: #fff; margin-bottom: 1rem; margin-top: 2rem; font-size: 1.2rem;">Infrastructure</h4>
+                    <p style="font-size: 1.1rem;">Docker, Docker Compose</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Slide 10: Conclusion -->
+        <section class="slide" id="slide-10">
+            <h1 class="hero-title" style="font-size: 4rem;">Empowering<br>IIT Patna</h1>
+            <p style="color: var(--text-dim); margin-top: 2rem; font-weight: 600; font-size: 1.5rem;">The Unified Digital Infrastructure for Students.</p>
+            <div style="margin-top: 4rem; padding: 1.2rem 4rem; background: var(--primary); border-radius: 99px; font-weight: 800; letter-spacing: 0.2em; cursor: pointer;">THANK YOU</div>
+        </section>
+
+    </div>
+
+    <div class="controls">
+        <button class="control-btn" id="prevBtn">←</button>
+        <button class="control-btn" id="nextBtn">→</button>
+    </div>
+
+    <script>
+        const slides = document.querySelectorAll('.slide');
+        const progress = document.getElementById('progress');
+        const nextBtn = document.getElementById('nextBtn');
+        const prevBtn = document.getElementById('prevBtn');
+        let currentSlide = 0;
+
+        function updateSlide() {
+            slides.forEach((slide, index) => {
+                slide.classList.toggle('active', index === currentSlide);
+            });
+            const progressWidth = ((currentSlide + 1) / slides.length) * 100;
+            progress.style.width = `${progressWidth}%`;
+        }
+
+        nextBtn.addEventListener('click', () => { if (currentSlide < slides.length - 1) { currentSlide++; updateSlide(); } });
+        prevBtn.addEventListener('click', () => { if (currentSlide > 0) { currentSlide--; updateSlide(); } });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ') { if (currentSlide < slides.length - 1) { currentSlide++; updateSlide(); } }
+            else if (e.key === 'ArrowLeft') { if (currentSlide > 0) { currentSlide--; updateSlide(); } }
+        });
+    </script>
+</body>
+</html>
