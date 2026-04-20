@@ -3,17 +3,18 @@ import * as Location from "expo-location";
 import { io } from "socket.io-client";
 import { useRef, useState } from "react";
 
-const socket = io("https://campus-connect-ljjb.onrender.com", {
+const socket = io(process.env.EXPO_PUBLIC_API_URL, {
   transports: ["websocket"],
   reconnection: true
 });
 
 const BUS_OPTIONS = [
-  "IITP-BUS-01",
-  "IITP-BUS-02",
-  "IITP-BUS-03",
-  "IITP-BUS-04",
-  "IITP-BUS-05"
+  "BR01PM6850",
+  "BR01PM6779",
+  "BR01PM6757",
+  "BR01PM6782",
+  "INST-BUS-01",
+  "INST-BUS-02"
 ];
 
 export default function HomeScreen() {

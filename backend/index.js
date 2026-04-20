@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import { createServer } from 'http';
@@ -101,6 +102,9 @@ io.on('connection', (socket) => {
   socket.emit('initialBusLocations', activeBuses);
 
   socket.on('driverLocationUpdate', async (data) => {
+    // Ensure the payload has the expected lastUpdated field in milliseconds
+    data.lastUpdated = Date.now();
+
     // Cache the latest location for future connections
     activeBuses[data.busId] = data;
 

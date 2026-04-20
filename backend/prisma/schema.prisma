@@ -78,6 +78,8 @@ model Bus {
   lat             Float?
   lng             Float?
   currentDriverId String?    @unique
+  driverName      String?
+  driverContact   String?
   lastUpdated     DateTime   @updatedAt
   
   schedules       Schedule[] 
@@ -96,6 +98,7 @@ model BusStop {
 model Schedule {
   id            Int      @id @default(autoincrement())
   departureTime String   
+  dayType       String   @default("WEEKDAY")
   
   busId         Int
   bus           Bus      @relation(fields: [busId], references: [id])

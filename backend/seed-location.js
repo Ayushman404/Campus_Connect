@@ -1,162 +1,68 @@
+import "dotenv/config";
 import prisma from "./lib/prisma.js";
+import fs from "fs/promises";
+import path from "path";
 
 async function main() {
-  console.log("🌱 Seeding Campus Transit Data...");
+  console.log("🌱 Seeding REAL Campus Transit Data...");
 
-  // 1. Create the Bus Stops
-  const gate = await prisma.busStop.upsert({
-    where: { name: "Main Gate" },
-    update: {},
-    create: { name: "Main Gate", lat: 25.5335149, lng: 84.8550936 },
-  });
+  // Read the schedule from JSON
+  const dataPath = path.join(process.cwd(), "real-schedule.json");
+  const data = JSON.parse(await fs.readFile(dataPath, "utf-8"));
 
-  const aryabhatta = await prisma.busStop.upsert({
-    where: { name: "Aryabhatta Hostel" },
-    update: {},
-    create: { name: "Aryabhatta Hostel", lat: 25.540448, lng: 84.8525089 },
-  });
+  // 1. Clear existing schedules to ensure a clean state
+  console.log("🧹 Clearing old schedule data...");
+  await prisma.schedule.deleteMany();
 
-  const tutBlock = await prisma.busStop.upsert({
-    where: { name: "Block 9" },
-    update: {},
-    create: { name: "Block 9", lat: 25.5327137, lng: 84.8518994 },
-  });
+  // 2. Create/Update the Bus Stops
+  console.log("📍 Upserting Bus Stops...");
+  const stopMap = {};
+  for (const stop of data.stops) {
+    const dbStop = await prisma.busStop.upsert({
+      where: { name: stop.name },
+      update: { lat: stop.lat, lng: stop.lng },
+      create: { name: stop.name, lat: stop.lat, lng: stop.lng },
+    });
+    stopMap[stop.name] = dbStop.id;
+  }
 
-  const dQuarters = await prisma.busStop.upsert({
-    where: { name: "D Quarters" },
-    update: {},
-    // TODO: Update these coordinates from Google Maps
-    create: { name: "D Quarters", lat: 25.548993, lng: 84.859703 },
-  });
+  // 3. Create/Update the Buses
+  console.log("🚌 Upserting Buses with Driver Info...");
+  const busMap = {};
+  for (const bus of data.buses) {
+    const dbBus = await prisma.bus.upsert({
+      where: { busNumber: bus.id },
+      update: {
+        status: "ACTIVE",
+        driverName: bus.driver,
+        driverContact: bus.contact
+      },
+      create: {
+        busNumber: bus.id,
+        status: "ACTIVE",
+        driverName: bus.driver,
+        driverContact: bus.contact
+      },
+    });
+    busMap[bus.id] = dbBus.id;
+  }
 
-  // 2. Create a Bus
-  const bus1 = await prisma.bus.upsert({
-    where: { busNumber: "IITP-BUS-01" },
-    update: {},
-    create: {
-      busNumber: "IITP-BUS-01",
-      status: "ACTIVE",
-      lat: 25.540448,
-      lng: 84.8525089,
-    },
-  });
+  // 4. Inject the Schedules
+  console.log("🕒 Injecting Schedules with Day Types...");
+  const scheduleData = data.schedules.map(sch => ({
+    busId: busMap[sch.busId],
+    sourceId: stopMap[sch.source],
+    destId: stopMap[sch.dest],
+    departureTime: sch.time,
+    dayType: sch.dayType || "WEEKDAY"
+  }));
 
-  // 3. Create the Daily Schedule
   await prisma.schedule.createMany({
-    data: [
-      {
-        busId: bus1.id,
-        sourceId: aryabhatta.id,
-        destId: tutBlock.id,
-        departureTime: "08:30",
-      },
-      {
-        busId: bus1.id,
-        sourceId: aryabhatta.id,
-        destId: tutBlock.id,
-        departureTime: "08:55",
-      },
-      {
-        busId: bus1.id,
-        sourceId: aryabhatta.id,
-        destId: tutBlock.id,
-        departureTime: "09:15",
-      },
-      {
-        busId: bus1.id,
-        sourceId: aryabhatta.id,
-        destId: tutBlock.id,
-        departureTime: "09:55",
-      },
-      {
-        busId: bus1.id,
-        sourceId: aryabhatta.id,
-        destId: tutBlock.id,
-        departureTime: "10:30",
-      },
-      {
-        busId: bus1.id,
-        sourceId: aryabhatta.id,
-        destId: tutBlock.id,
-        departureTime: "10:55",
-      },
-      {
-        busId: bus1.id,
-        sourceId: aryabhatta.id,
-        destId: tutBlock.id,
-        departureTime: "11:30",
-      },
-      {
-        busId: bus1.id,
-        sourceId: aryabhatta.id,
-        destId: tutBlock.id,
-        departureTime: "11:55",
-      },
-      {
-        busId: bus1.id,
-        sourceId: aryabhatta.id,
-        destId: tutBlock.id,
-        departureTime: "12:30",
-      },
-      {
-        busId: bus1.id,
-        sourceId: aryabhatta.id,
-        destId: tutBlock.id,
-        departureTime: "12:55",
-      },
-      {
-        busId: bus1.id,
-        sourceId: aryabhatta.id,
-        destId: dQuarters.id,
-        departureTime: "13:00",
-      },
-      {
-        busId: bus1.id,
-        sourceId: dQuarters.id,
-        destId: aryabhatta.id,
-        departureTime: "13:20",
-      },
-      {
-        busId: bus1.id,
-        sourceId: aryabhatta.id,
-        destId: tutBlock.id,
-        departureTime: "14:10",
-      },
-      {
-        busId: bus1.id,
-        sourceId: aryabhatta.id,
-        destId: tutBlock.id,
-        departureTime: "14:30",
-      },
-      {
-        busId: bus1.id,
-        sourceId: aryabhatta.id,
-        destId: tutBlock.id,
-        departureTime: "14:55",
-      },
-      {
-        busId: bus1.id,
-        sourceId: aryabhatta.id,
-        destId: tutBlock.id,
-        departureTime: "15:30",
-      },
-      {
-        busId: bus1.id,
-        sourceId: aryabhatta.id,
-        destId: tutBlock.id,
-        departureTime: "15:55",
-      },
-      {
-        busId: bus1.id,
-        sourceId: tutBlock.id,
-        destId: aryabhatta.id,
-        departureTime: "16:05",
-      },
-    ],
+    data: scheduleData,
     skipDuplicates: true,
   });
 
-  console.log("✅ Seeding Complete! Stops and Schedules are ready.");
+  console.log(`✅ Seeding Complete! ${scheduleData.length} records added.`);
 }
 
 main()
