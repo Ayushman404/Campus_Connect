@@ -3,11 +3,11 @@ import React from 'react';
 // MAIN FIX: Changed prop from { onRouteSelect } to { onBusSelect }
 const BusSchedule = ({ onBusSelect }) => {
   const activeBuses = [
-    { id: 'BUS-01', nextSource: 'Aryabhatta', nextDest: 'TUT Block', time: '09:00 AM', status: 'Live' },
-    { id: 'BUS-02', nextSource: 'Aryabhatta', nextDest: 'D Quarters', time: '09:15 AM', status: 'Departing' },
-    { id: 'BUS-03', nextSource: 'IIT Patna', nextDest: 'Patna Junction', time: '10:00 AM', status: 'Scheduled' },
-    { id: 'BUS-04', nextSource: 'Asima', nextDest: 'TUT Block', time: '09:10 AM', status: 'Live' },
-    { id: 'BUS-05', nextSource: 'TUT Block', nextDest: 'Aryabhatta', time: '09:30 AM', status: 'Scheduled' },
+    { id: 'IITP-BUS-01', nextSource: 'Aryabhatta', nextDest: 'TUT Block', time: '09:00 AM', status: 'Live' },
+    { id: 'IITP-BUS-02', nextSource: 'Aryabhatta', nextDest: 'D Quarters', time: '09:15 AM', status: 'Departing' },
+    { id: 'IITP-BUS-03', nextSource: 'IIT Patna', nextDest: 'Patna Junction', time: '10:00 AM', status: 'Scheduled' },
+    { id: 'IITP-BUS-04', nextSource: 'Asima', nextDest: 'TUT Block', time: '09:10 AM', status: 'Live' },
+    { id: 'IITP-BUS-05', nextSource: 'TUT Block', nextDest: 'Aryabhatta', time: '09:30 AM', status: 'Scheduled' },
   ];
 
   return (

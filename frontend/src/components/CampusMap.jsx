@@ -32,11 +32,11 @@ const CampusMap = ({ selectedBus }) => {
   useEffect(() => {
     // Initial static positions [lng, lat]
     setActiveBuses({
-      'BUS-01': [84.8511, 25.5358],
-      'BUS-02': [84.8520, 25.5360],
-      'BUS-03': [84.8500, 25.5340],
-      'BUS-04': [84.8530, 25.5370],
-      'BUS-05': [84.8490, 25.5350]
+      'IITP-BUS-01': [84.8511, 25.5358],
+      'IITP-BUS-02': [84.8520, 25.5360],
+      'IITP-BUS-03': [84.8500, 25.5340],
+      'IITP-BUS-04': [84.8530, 25.5370],
+      'IITP-BUS-05': [84.8490, 25.5350]
     });
 
     socket.on('busMoved', (data) => {
@@ -85,7 +85,7 @@ const CampusMap = ({ selectedBus }) => {
                 {!isDimmed && (
                   <MarkerLabel position="bottom">
                     <span className="bg-surface-container-highest py-1.5 px-3 rounded-xl border border-on-surface/5 text-on-surface shadow-xl text-[10px] whitespace-nowrap flex items-center gap-1.5 font-black uppercase tracking-widest mt-1">
-                      🚌 {busId} <span className="text-primary animate-pulse ml-1 text-xs">●</span> Live
+                      🚌 {busId.replace('IITP-', '')} <span className="text-primary animate-pulse ml-1 text-xs">●</span> Live
                     </span>
                   </MarkerLabel>
                 )}
