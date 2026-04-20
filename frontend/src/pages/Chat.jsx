@@ -17,7 +17,7 @@ export default function Chat() {
 
   // 1. Initialize Socket
   useEffect(() => {
-    const newSocket = io('http://localhost:5000');
+    const newSocket = io('https://campus-connect-ljjb.onrender.com');
     setSocket(newSocket);
     
     if (user) {
@@ -29,7 +29,7 @@ export default function Chat() {
 
   const fetchConversations = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/chats', {
+      const res = await fetch('https://campus-connect-ljjb.onrender.com/api/chats', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await res.json();
@@ -61,7 +61,7 @@ export default function Chat() {
     }
 
     try {
-      const res = await fetch(`http://localhost:5000/api/chats/${chat.id}`, {
+      const res = await fetch(`https://campus-connect-ljjb.onrender.com/api/chats/${chat.id}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {
@@ -178,7 +178,7 @@ export default function Chat() {
               <div className="aspect-square bg-surface-container rounded-2xl overflow-hidden border border-outline-variant/30 flex items-center justify-center shrink-0">
                 {activeChat.product?.images?.[0] ? (
                   <img 
-                    src={activeChat.product.images[0].startsWith('http') ? activeChat.product.images[0] : `http://localhost:5000${activeChat.product.images[0]}`} 
+                    src={activeChat.product.images[0].startsWith('http') ? activeChat.product.images[0] : `https://campus-connect-ljjb.onrender.com${activeChat.product.images[0]}`} 
                     className="w-full h-full object-cover" 
                     alt={activeChat.product.title} 
                   />

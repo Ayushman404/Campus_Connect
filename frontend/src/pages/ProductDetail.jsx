@@ -14,7 +14,7 @@ export default function ProductDetail() {
   const [activeImageIndex, setActiveImageIndex] = useState(0);
 
   useEffect(() => {
-    const newSocket = io('http://localhost:5000');
+    const newSocket = io('https://campus-connect-ljjb.onrender.com');
     setSocket(newSocket);
     return () => newSocket.close();
   }, []);
@@ -22,7 +22,7 @@ export default function ProductDetail() {
   useEffect(() => {
     const fetchProduct = async () => {
       try {
-        const response = await fetch('http://localhost:5000/api/products', {
+        const response = await fetch('https://campus-connect-ljjb.onrender.com/api/products', {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         if (response.ok) {
@@ -42,7 +42,7 @@ export default function ProductDetail() {
   const handleInterest = async () => {
     if (!product) return;
     try {
-      const chatRes = await fetch('http://localhost:5000/api/chats/init', {
+      const chatRes = await fetch('https://campus-connect-ljjb.onrender.com/api/chats/init', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -118,7 +118,7 @@ export default function ProductDetail() {
                   <img 
                     className="w-full h-full object-cover rounded-xl shadow-2xl transition-all duration-700 animate-in fade-in zoom-in-95" 
                     key={activeImageIndex}
-                    src={images[activeImageIndex].startsWith('http') ? images[activeImageIndex] : `http://localhost:5000${images[activeImageIndex]}`}
+                    src={images[activeImageIndex].startsWith('http') ? images[activeImageIndex] : `https://campus-connect-ljjb.onrender.com${images[activeImageIndex]}`}
                     alt={`${product.title} view ${activeImageIndex + 1}`} 
                   />
                   
@@ -163,7 +163,7 @@ export default function ProductDetail() {
                     className={`relative w-24 h-24 rounded-xl overflow-hidden border-2 transition-all p-1 shrink-0 ${activeImageIndex === idx ? 'border-primary ring-4 ring-primary/20' : 'border-surface-container-high grayscale-50 hover:grayscale-0'}`}
                   >
                     <img 
-                      src={img.startsWith('http') ? img : `http://localhost:5000${img}`} 
+                      src={img.startsWith('http') ? img : `https://campus-connect-ljjb.onrender.com${img}`} 
                       className="w-full h-full object-cover rounded-lg" 
                       alt={`Thumbnail ${idx + 1}`} 
                     />

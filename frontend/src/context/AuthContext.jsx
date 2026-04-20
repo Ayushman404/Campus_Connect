@@ -10,7 +10,7 @@ export const AuthProvider = ({ children }) => {
   // When app loads, if there is a token, try to fetch the profile
   useEffect(() => {
     if (token) {
-      fetch('http://localhost:5000/api/users/profile', {
+      fetch('https://campus-connect-ljjb.onrender.com/api/users/profile', {
         headers: {
           'Authorization': `Bearer ${token}`
         }

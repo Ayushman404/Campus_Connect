@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { io } from 'socket.io-client';
 import { Map, MapMarker, MarkerContent, MarkerLabel, useMap } from './ui/map';
 
-const socket = io('http://localhost:5000');
+const socket = io('https://campus-connect-ljjb.onrender.com');
 
 // MapController uses the map context to fly to new centers
 const MapFocusController = ({ center, zoom }) => {

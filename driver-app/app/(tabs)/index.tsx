@@ -3,7 +3,7 @@ import * as Location from "expo-location";
 import { io } from "socket.io-client";
 import { useRef, useState } from "react";
 
-const socket = io("http://192.172.5.234:5000", {
+const socket = io("https://campus-connect-ljjb.onrender.com", {
   transports: ["websocket"],
   reconnection: true
 });

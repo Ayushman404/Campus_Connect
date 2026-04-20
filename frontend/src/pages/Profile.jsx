@@ -28,7 +28,7 @@ export default function Profile() {
 
   const fetchProfile = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/users/profile', {
+      const res = await fetch('https://campus-connect-ljjb.onrender.com/api/users/profile', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await res.json();
@@ -104,7 +104,7 @@ export default function Profile() {
     });
 
     try {
-      const response = await fetch('http://localhost:5000/api/products', {
+      const response = await fetch('https://campus-connect-ljjb.onrender.com/api/products', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` },
         body: formData
@@ -130,7 +130,7 @@ export default function Profile() {
     setError('');
     
     try {
-      const res = await fetch('http://localhost:5000/api/users/profile', {
+      const res = await fetch('https://campus-connect-ljjb.onrender.com/api/users/profile', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -152,7 +152,7 @@ export default function Profile() {
 
   const handleMarkAsSold = async (productId) => {
     try {
-      const res = await fetch(`http://localhost:5000/api/products/${productId}/sold`, {
+      const res = await fetch(`https://campus-connect-ljjb.onrender.com/api/products/${productId}/sold`, {
         method: 'PUT',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -167,7 +167,7 @@ export default function Profile() {
   const handleDelete = async (productId) => {
     if (!window.confirm('Are you sure you want to delete this listing?')) return;
     try {
-      const res = await fetch(`http://localhost:5000/api/products/${productId}`, {
+      const res = await fetch(`https://campus-connect-ljjb.onrender.com/api/products/${productId}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -299,7 +299,7 @@ export default function Profile() {
                 <div className="relative mb-6 overflow-hidden aspect-[4/5] bg-surface-container flex items-center justify-center rounded-lg">
                   {item.images && item.images.length > 0 ? (
                     <img 
-                      src={item.images[0].startsWith('http') ? item.images[0] : `http://localhost:5000${item.images[0]}`} 
+                      src={item.images[0].startsWith('http') ? item.images[0] : `https://campus-connect-ljjb.onrender.com${item.images[0]}`} 
                       alt={item.title} 
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" 
                     />

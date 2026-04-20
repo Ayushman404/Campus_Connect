@@ -13,7 +13,7 @@ export default function MarketplaceNavbar() {
   useEffect(() => {
     if (!token || !user) return;
 
-    const newSocket = io('http://localhost:5000');
+    const newSocket = io('https://campus-connect-ljjb.onrender.com');
     setSocket(newSocket);
 
     newSocket.emit('subscribeToNotifications', user.id);
@@ -23,7 +23,7 @@ export default function MarketplaceNavbar() {
       setUnreadNotes((prev) => prev + 1);
     });
 
-    fetch('http://localhost:5000/api/notifications', {
+    fetch('https://campus-connect-ljjb.onrender.com/api/notifications', {
       headers: { 'Authorization': `Bearer ${token}` }
     })
       .then(res => res.json())

@@ -19,7 +19,7 @@ export default function Marketplace() {
 
   const fetchProducts = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/products', {
+      const response = await fetch('https://campus-connect-ljjb.onrender.com/api/products', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await response.json();
@@ -92,7 +92,7 @@ export default function Marketplace() {
     });
 
     try {
-      const response = await fetch('http://localhost:5000/api/products', {
+      const response = await fetch('https://campus-connect-ljjb.onrender.com/api/products', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -205,7 +205,7 @@ export default function Marketplace() {
                     </div>
                     {product.images && product.images.length > 0 ? (
                       <img 
-                        src={product.images[0].startsWith('http') ? product.images[0] : `http://localhost:5000${product.images[0]}`} 
+                        src={product.images[0].startsWith('http') ? product.images[0] : `https://campus-connect-ljjb.onrender.com${product.images[0]}`} 
                         alt={product.title} 
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" 
                       />
